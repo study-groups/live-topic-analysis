@@ -58,9 +58,8 @@ def send_to_app_server(rdd):
     times = [y[1] for y in arr]
     #Array of the labels in the RDD
     tags  = [y[0] for y in arr]
-    url = 'http://localhost:9991/updateData' #make port a var?
-    request_data = {'times': str(times), 'tags': str(tags)}
-    print('Sending post request...')
+    url = 'http://eba3687449cd:9991/updateData' #make port a var?
+    request_data = {'times': times, 'tags': tags}
     response = requests.post(url, data=request_data)
 
 #Parse the stream  such that each row is a list of length two
@@ -77,7 +76,7 @@ splitStream = parsedStream.map(lambda line:
                          [line[0], line[1].lower().split(' ')])
 
 #define a list of words to track and count
-trackwords = ['chelsea', 'arsenal']
+trackwords = ['trump', 'kraft']
 
 #filter stream to just the words we want 
 filteredStream = splitStream.map(lambda line: [line[0],

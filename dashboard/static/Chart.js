@@ -1,4 +1,3 @@
-<script>
    var ctx = document.getElementById("chart");
    var myChart = new Chart(ctx, {
     	type: 'line',
@@ -26,6 +25,7 @@
    });
    var src_Labels = [];
    var src_Data = [];
+   console.log('chart object created');
    setInterval(function(){
     	$.getJSON('/refreshData', {
     	}, function(data) {
@@ -36,4 +36,14 @@
     	myChart.data.datasets[0].data = src_Data;
     	myChart.update();
    },5000);
-</script>
+/*   var counter = 1;
+   var gdata = {};
+   setInterval(function(){
+        $.getJSON('/refreshData', {
+        }, function(data) {
+                $('#content').html(JSON.stringify(data));
+                gdata = data;
+                counter++;
+        });
+   },1000);
+*/

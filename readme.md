@@ -15,7 +15,7 @@ Where $spth is a variable pointing to the local directory containing the project
 - Run Spark Stream:
   - `winpty docker run -it --rm --name pyspark1 -v $spth:/home/jovyan --network thinkful-net jupyter/pyspark-notebook //bin/bash`
 - Run WebApp server by executing `app.py`
-
+  - `winpty docker run -it --name appserver -u 0 -v $spth\\dashboard:/home/ds/data -p 9991:9991 --network thinkful-net thinkfulstudent/simple_server //bin/bash`
 
 ## Architecture 
 - TBD
