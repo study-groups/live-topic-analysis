@@ -12,7 +12,7 @@ def get_tweet_stream(auth_object):
     #return streaming response object
     url = 'https://stream.twitter.com/1.1/statuses/filter.json'
     query_data = [('language', 'en'),
-                  ('track', 'Trump, Kraft'),
+                  ('track', 'warriors, clippers'),
                   ('tweet_mode','extended')]
     query_url = url + '?' + \
         '&'.join([str(t[0]) + '=' + str(t[1]) for t in query_data])

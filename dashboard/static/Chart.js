@@ -1,7 +1,32 @@
    var ctx = document.getElementById("chart");
+   var sampledata = [5,6,3,7];
+   var sampledata2 = [3,10,8,6];
+   var samplelabels = ['','','',''];
    var myChart = new Chart(ctx, {
     	type: 'line',
-    	data: {
+        data: {
+           labels: samplelabels,
+           datasets: [
+               {
+               label: 'first category',
+               data: sampledata
+               },
+               {
+               label: 'second category',
+               data: sampledata2
+               }
+        ]},
+        options:{
+            scales: {
+                xAxes: [{
+                    type: 'category',
+                    display: true
+                }]
+            }
+        }})
+
+
+/*    	data: {
         	labels: [{% for item in tags %}
                   	"{{item}}",
                  	{% endfor %}],
@@ -9,23 +34,13 @@
             	label: '# of Mentions',
             	data: [{% for item in times %}
      	                 {{item}},
-                    	{% endfor %}],
-            	borderWidth: 1
+                    	{% endfor %}]
         	}]
-    	},
-    	options: {
-        	scales: {
-	            yAxes: [{
-                	ticks: {
-                    	beginAtZero:true
-                	}
-            	}]
-        	}
     	}
+
    });
    var src_Labels = [];
    var src_Data = [];
-   console.log('chart object created');
    setInterval(function(){
     	$.getJSON('/refreshData', {
     	}, function(data) {
@@ -36,14 +51,21 @@
     	myChart.data.datasets[0].data = src_Data;
     	myChart.update();
    },5000);
-/*   var counter = 1;
+*/
+   var counter = 1;
    var gdata = {};
    setInterval(function(){
         $.getJSON('/refreshData', {
         }, function(data) {
-                $('#content').html(JSON.stringify(data));
-                gdata = data;
+                sampledata.push(counter+1);
+                sampledata2.push(counter);
+                samplelabels.push('');
                 counter++;
         });
-   },1000);
-*/
+        myChart.data.labels = samplelabels;
+        myChart.data.datasets[0].data = sampledata;
+        myChart.data.datasets[1].data = sampledata2;
+        myChart.update();
+   },2000);
+
+
