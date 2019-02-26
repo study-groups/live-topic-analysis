@@ -58,9 +58,14 @@ def send_to_app_server(rdd):
     times = [y[1] for y in arr]
     #Array of the labels in the RDD
     tags  = [y[0] for y in arr]
-    url = 'http://2367817035da:9991/updateData' #make port a var?
+    req_dict = dict(zip(tags, times))
+    for _ in trackwords:
+        if _ not in req_dict.keys():
+            req_dict[_] = 0
+    print(req_dict)
+    url = 'http://6a8aabb522d1:9991/updateData' #make port a var?
     request_data = {'times': times, 'tags': tags}
-    response = requests.post(url, data=request_data)
+    response = requests.post(url, data=req_dict)
 
 #Parse the stream  such that each row is a list of length two
 #The UNIX timestamp of the date, and full text of the tweet
