@@ -63,7 +63,7 @@ def send_to_app_server(rdd):
         if _ not in req_dict.keys():
             req_dict[_] = 0
     print(req_dict)
-    url = 'http://6a8aabb522d1:9991/updateData' #make port a var?
+    url = 'http://fca2fe920c87:9991/updateData' #make port a var?
     request_data = {'times': times, 'tags': tags}
     response = requests.post(url, data=req_dict)
 
@@ -81,7 +81,7 @@ splitStream = parsedStream.map(lambda line:
                          [line[0], line[1].lower().split(' ')])
 
 #define a list of words to track and count
-trackwords = ['warriors', 'clippers']
+trackwords = ['trump', 'cohen']
 
 #filter stream to just the words we want 
 filteredStream = splitStream.map(lambda line: [line[0],

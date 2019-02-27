@@ -1,19 +1,20 @@
    var ctx = document.getElementById("chart");
-   var sampledata = [5,6,3,7];
-   var sampledata2 = [3,10,8,6];
-   var samplelabels = ['','','',''];
+   var initdata = [0];
+   var initlabels = [''];
    var myChart = new Chart(ctx, {
     	type: 'line',
         data: {
-           labels: samplelabels,
+           labels: initlabels,
            datasets: [
                {
                label: 'first category',
-               data: sampledata
+               data: initdata,
+               pointRadius: 0
                },
                {
                label: 'second category',
-               data: sampledata2
+               data: initdata,
+               pointRadius: 0
                }
         ]},
         options:{
@@ -21,51 +22,59 @@
                 xAxes: [{
                     type: 'category',
                     display: true
-                }]
+                }],
+                yAxes: [{
+                    ticks: {
+                        beginAtZero:true
+                        }
+               }]
             }
         }})
 
 
-/*    	data: {
-        	labels: [{% for item in tags %}
-                  	"{{item}}",
-                 	{% endfor %}],
-        	datasets: [{
-            	label: '# of Mentions',
-            	data: [{% for item in times %}
-     	                 {{item}},
-                    	{% endfor %}]
-        	}]
-    	}
-
-   });
    var src_Labels = [];
    var src_Data = [];
+   var topics = []
+   var topic1 = '';
+   var topic2 = '';
+   /*sleep function*/
+/*   function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+   }
+
+
+   function getTopics(){
+       /*Check for topics every 2 seconds until found
+       while (topics.length == 0){
+         await sleep(2000);
+         /*check for data received:
+         $.getJSON('/refreshData',{
+         }, function(stateobj) {
+             for (var key in stateobj){
+               if (stateobj.hasOwnProperty(key) && key != 'labels'){
+                    topics.push(key);
+                    }
+               }
+          console.log(topics);
+          }}
+       topic1 = topics[0];
+       topic2 = topics[1];
+       console.log(topic1, topic2);
+   };
+
+*/
+   var top1data = [];
+   var top2data = [];
+   var labels= [];
    setInterval(function(){
     	$.getJSON('/refreshData', {
     	}, function(data) {
-        	src_Labels = data.sLabel;
-        	src_Data = data.sData;
+        	top1data = data.trump;
+        	top2data = data.cohen;
+                labels = data.labels;
     	});
-    	myChart.data.labels = src_Labels;
-    	myChart.data.datasets[0].data = src_Data;
-    	myChart.update();
-   },5000);
-*/
-   var counter = 1;
-   var gdata = {};
-   setInterval(function(){
-        $.getJSON('/refreshData', {
-        }, function(data) {
-                sampledata.push(counter+1);
-                sampledata2.push(counter);
-                samplelabels.push('');
-                counter++;
-        });
-        myChart.data.labels = samplelabels;
-        myChart.data.datasets[0].data = sampledata;
-        myChart.data.datasets[1].data = sampledata2;
+    	myChart.data.labels = labels;
+    	myChart.data.datasets[0].data = top1data;
+    	myChart.data.datasets[1].data = top2data;
         myChart.update();
-   },2000);
-
-
+   },5000);
