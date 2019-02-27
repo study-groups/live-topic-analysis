@@ -7,14 +7,18 @@
            labels: initlabels,
            datasets: [
                {
-               label: 'first category',
+               label: 'Barcelona',
                data: initdata,
-               pointRadius: 0
+               pointRadius: 0,
+               backgroundColor: "rgba(168, 19, 62, 0.3)",
+               borderColor: "rgba(0,77,152,1)"
                },
                {
-               label: 'second category',
+               label: 'Madrid',
                data: initdata,
-               pointRadius: 0
+               pointRadius: 0,
+               backgroundColor: "rgba(0,82,159,0.3)",
+               borderColor: "rgba(254,190,16,1)"
                }
         ]},
         options:{
@@ -22,12 +26,13 @@
                 xAxes: [{
                     type: 'category',
                     display: true
-                }],
-                yAxes: [{
-                    ticks: {
-                        beginAtZero:true
-                        }
-               }]
+                }]
+//,
+//                yAxes: [{
+  //                  ticks: {
+    //                    beginAtZero:true
+      //                  }
+        //       }]
             }
         }})
 
@@ -76,7 +81,7 @@ var appState = "STOPPED"; //possible states: RUNNING, STOPPED
 
    var top1data = [];
    var top2data = [];
-   var labels= [];
+   var timestamps= [];
 
 $(document).ready(function(){
    setInterval(function(){
@@ -89,15 +94,17 @@ $(document).ready(function(){
         case "RUNNING":
     	  $.getJSON('/refreshData', {
     	  }, function(data) {
-        	top1data = data.trump;
-        	top2data = data.cohen;
-                timestamps = data.labels;
+        	top1data = data["barcelona"];
+                pos2 = data["madrid"];
+        	top2data = [];
+                pos2.forEach(item => top2data.push(-item));
+                timestamps = data["labels"];
     	  });
     	  myChart.data.labels = timestamps;
     	  myChart.data.datasets[0].data = top1data;
     	  myChart.data.datasets[1].data = top2data;
           myChart.update();
           break;
-   },5000);
+   }},10000);
 
 });

@@ -21,7 +21,7 @@ sc.setLogLevel("ERROR")
 
 # create the Streaming Context from the above spark context with interval
 #size 5 seconds
-ssc = StreamingContext(sc, 5)
+ssc = StreamingContext(sc, 30)
 
 # setting a checkpoint to allow RDD recovery
 ssc.checkpoint("cps")
@@ -63,8 +63,7 @@ def send_to_app_server(rdd):
         if _ not in req_dict.keys():
             req_dict[_] = 0
     print(req_dict)
-    url = 'http://65e44de75d4e:9991/updateData' #make port a var?
-    request_data = {'times': times, 'tags': tags}
+    url = 'http://5be6b4c419d7:9991/updateData' #make port a var?
     response = requests.post(url, data=req_dict)
 
 #Parse the stream  such that each row is a list of length two
@@ -81,7 +80,7 @@ splitStream = parsedStream.map(lambda line:
                          [line[0], line[1].lower().split(' ')])
 
 #define a list of words to track and count
-trackwords = ['trump', 'cohen']
+trackwords = ['barcelona', 'madrid']
 
 #filter stream to just the words we want 
 filteredStream = splitStream.map(lambda line: [line[0],
