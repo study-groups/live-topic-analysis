@@ -7,9 +7,24 @@ import json
 from datetime import datetime
 
 
-TCP_REMOTE_HOST = "data_server" #or whatever you named the docker contai$
+TCP_REMOTE_HOST = "data_server" #docker container name of tweet generator
 TCP_PORT_INPUT = 9009 #must also be specified in the server file
-#TCP_PORT_OUTPUT = 9991
+TCP_REMOTE_APPSERVER = 'appserver' # docker container name of app server
+TCP_PORT_OUTPUT = 9991 # must be exposed by app server docker container
+
+#define a dict of topics to track and count.
+#The keys are words that will be counted as a mention of the topic.
+#The values are the "consolidated" topics that will ultimately be tracked and charted.
+#All lowercase
+trackwords = {'barcelona' : 'barcelona',
+              'fcb'       : 'barcelona',
+              'barca'     : 'barcelona',
+              'madrid'    : 'real madrid',
+              'realmadrid': 'real madrid',
+              'mad'       : 'real madrid'}
+
+
+
 
 # create spark configuration
 conf = SparkConf()
@@ -19,9 +34,8 @@ conf.setAppName("TwitterStreamApp")
 sc = SparkContext(conf=conf)
 sc.setLogLevel("ERROR")
 
-# create the Streaming Context from the above spark context with interval
-#size 5 seconds
-ssc = StreamingContext(sc, 30)
+# create the Streaming Context from the above spark context with interval in sec
+ssc = StreamingContext(sc, 5)
 
 # setting a checkpoint to allow RDD recovery
 ssc.checkpoint("cps")
@@ -29,41 +43,19 @@ ssc.checkpoint("cps")
 # read data from TCP
 dataStream = ssc.socketTextStream(TCP_REMOTE_HOST, TCP_PORT_INPUT)
 
-def getSparkSessionInstance(sparkConf):
-    if ("sparkSessionSingletonInstance" not in globals()):
-        globals()["sparkSessionSingletonInstance"] = SparkSession \
-            .builder \
-            .config(conf=sparkConf) \
-            .getOrCreate()
-    return globals()["sparkSessionSingletonInstance"]
-
-def showrdd(time, rdd):
-    #This is a debugging function used only for 
-    #displaying the stream in a non-encoded format
-    try:
-        # Get spark sql singleton context from the current context
-        spark = getSparkSessionInstance(rdd.context.getConf())
-        #this returns a PipelinedRDD
-        row_rdd = rdd.map(lambda w: Row(ts=w[0], tx=w[1]))
-        #create df then show as desired
-        df = spark.createDataFrame(row_rdd)
-        df.show(1, truncate=False)
-    except Exception as e:
-        e = sys.exc_info()[1]
-
 def send_to_app_server(rdd):
     #translate down to arrays to send to server
     arr = [x for x in rdd.toLocalIterator()]
     #Array of the counts of mentions
-    times = [y[1] for y in arr]
+    counts = [y[1] for y in arr]
     #Array of the labels in the RDD
-    tags  = [y[0] for y in arr]
-    req_dict = dict(zip(tags, times))
-    for _ in trackwords:
+    topics = [y[0] for y in arr]
+    req_dict = dict(zip(topics, counts))
+    #add zeroes, if applicable
+    for _ in trackwords.values():
         if _ not in req_dict.keys():
             req_dict[_] = 0
-    print(req_dict)
-    url = 'http://5be6b4c419d7:9991/updateData' #make port a var?
+    url = 'http://{}:{}/updateData'.format(TCP_REMOTE_APPSERVER,TCP_PORT_OUTPUT)
     response = requests.post(url, data=req_dict)
 
 #Parse the stream  such that each row is a list of length two
@@ -79,15 +71,9 @@ parsedStream = dataStream.map(lambda line: [
 splitStream = parsedStream.map(lambda line:
                          [line[0], line[1].lower().split(' ')])
 
-#define a list of words to track and count
-trackwords = ['barcelona', 'madrid']
-
-#filter stream to just the words we want 
+#filter stream to just the consolidated topics we want
 filteredStream = splitStream.map(lambda line: [line[0],
-                                   #Exclusive:
-                                   #[x for x in line[1] if len(x)>0 and x not in stops]])
-                                   #Inclusive:
-                                   [x for x in line[1] if x in trackwords]])
+                                   [trackwords[x] for x in line[1] if x in trackwords.keys()]])
 
 #itemize such that each token is it's own, timestamped row
 itemizedStream = filteredStream.flatMapValues(lambda _: _)
@@ -95,7 +81,7 @@ itemizedStream = filteredStream.flatMapValues(lambda _: _)
 
 #Count tokens by tag within each batch of the stream
 #This leaks the timestamp intentionally for now, though
-#It may be used in future expansions
+#It will be used in future expansions of this project
 tokensOnly = itemizedStream.map(lambda line: line[1])
 summedStream = tokensOnly.countByValue()
 
@@ -103,11 +89,8 @@ summedStream = tokensOnly.countByValue()
 summedStream.foreachRDD(send_to_app_server)
 
 
-#Run this to see the string version for debugging
-#displ = filteredStream.foreachRDD(showrdd)
-#Or, use this to see the bytes version
+#Leave the below uncommented to see what is sent in the shell
 summedStream.pprint()
-
 
 # start the streaming computation
 ssc.start()

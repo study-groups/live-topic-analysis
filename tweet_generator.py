@@ -8,7 +8,7 @@ import datetime
 
 
 def get_tweet_stream(auth_object):
-    #formulate twitter request and 
+    #formulate twitter request and
     #return streaming response object
     url = 'https://stream.twitter.com/1.1/statuses/filter.json'
     query_data = [('language', 'en'),
@@ -35,6 +35,7 @@ def connect_stream_to_spark(http_resp, tcp_connection):
                 tweet_text = full_tweet['extended_tweet']['full_text']
             else:
                 tweet_text = full_tweet['text']
+            #Uncommend the below to see the data in the shell
             #print(f"Created at: {timestamp.encode('utf-8')}")
             #print(f"Tweet Text: {tweet_text.encode('utf-8')}")
             #print("------------------------------------------")
@@ -42,8 +43,8 @@ def connect_stream_to_spark(http_resp, tcp_connection):
                             'timestamp':timestamp,
                             'text':tweet_text,
                             }).encode('utf-8')
-            #Send the encoded json bytes. For some
-            #Reason, the newline is needed to trigger
+            #Send the encoded json bytes.
+            #The trailing newline is needed to trigger
             #the consistent receipt in spark as RDDs
             tcp_connection.send(tweet_info+b'\n')
         except Exception as e:

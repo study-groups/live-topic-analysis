@@ -95,7 +95,7 @@ $(document).ready(function(){
     	  $.getJSON('/refreshData', {
     	  }, function(data) {
         	top1data = data["barcelona"];
-                pos2 = data["madrid"];
+                pos2 = data["real madrid"];
         	top2data = [];
                 pos2.forEach(item => top2data.push(-item));
                 timestamps = data["labels"];
@@ -105,6 +105,6 @@ $(document).ready(function(){
     	  myChart.data.datasets[1].data = top2data;
           myChart.update();
           break;
-   }},10000);
+   }},5000);
 
 });
