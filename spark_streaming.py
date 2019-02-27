@@ -63,7 +63,7 @@ def send_to_app_server(rdd):
         if _ not in req_dict.keys():
             req_dict[_] = 0
     print(req_dict)
-    url = 'http://fca2fe920c87:9991/updateData' #make port a var?
+    url = 'http://65e44de75d4e:9991/updateData' #make port a var?
     request_data = {'times': times, 'tags': tags}
     response = requests.post(url, data=req_dict)
 

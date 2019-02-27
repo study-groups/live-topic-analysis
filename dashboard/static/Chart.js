@@ -37,17 +37,17 @@
    var topics = []
    var topic1 = '';
    var topic2 = '';
-   /*sleep function*/
+   //sleep function
 /*   function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
    }
 
 
    function getTopics(){
-       /*Check for topics every 2 seconds until found
+       //Check for topics every 2 seconds until found
        while (topics.length == 0){
          await sleep(2000);
-         /*check for data received:
+         //check for data received:
          $.getJSON('/refreshData',{
          }, function(stateobj) {
              for (var key in stateobj){
@@ -61,20 +61,43 @@
        topic2 = topics[1];
        console.log(topic1, topic2);
    };
+   var DaysEnum = {"monday":1, "tuesday":2, "wednesday":3, ...}
+   Object.freeze(DaysEnum)// possibles values for the enumerator can't be changed
+
+
+   let day = DaysEnum.tuesday
+
 
 */
+
+var appState = "STOPPED"; //possible states: RUNNING, STOPPED
+
+
+
    var top1data = [];
    var top2data = [];
    var labels= [];
+
+$(document).ready(function(){
    setInterval(function(){
-    	$.getJSON('/refreshData', {
-    	}, function(data) {
+      switch (appState) {
+        case "STOPPED":
+          //getstate from python server
+          //if 'running, receive the topics via post request, do the below, else break
+          appState = "RUNNING"
+          break;
+        case "RUNNING":
+    	  $.getJSON('/refreshData', {
+    	  }, function(data) {
         	top1data = data.trump;
         	top2data = data.cohen;
-                labels = data.labels;
-    	});
-    	myChart.data.labels = labels;
-    	myChart.data.datasets[0].data = top1data;
-    	myChart.data.datasets[1].data = top2data;
-        myChart.update();
+                timestamps = data.labels;
+    	  });
+    	  myChart.data.labels = timestamps;
+    	  myChart.data.datasets[0].data = top1data;
+    	  myChart.data.datasets[1].data = top2data;
+          myChart.update();
+          break;
    },5000);
+
+});

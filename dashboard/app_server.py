@@ -34,3 +34,15 @@ def update_data():
 if __name__ == "__main__":
         app.run(host='0.0.0.0', port=9991) 
 
+
+
+
+#print(batch)
+
+#>>>{'trump':50, 'cohen':23}
+
+
+
+#print(state)
+
+#>>>{'trump': [50], 'cohen': [23], 'labels': ['']}
