@@ -7,14 +7,14 @@
            labels: initlabels,
            datasets: [
                {
-               label: 'Barcelona',
+               label: 'Topic1',
                data: initdata,
                pointRadius: 0,
                backgroundColor: "rgba(168, 19, 62, 0.3)",
                borderColor: "rgba(0,77,152,1)"
                },
                {
-               label: 'Madrid',
+               label: 'Topic2',
                data: initdata,
                pointRadius: 0,
                backgroundColor: "rgba(0,82,159,0.3)",
@@ -75,34 +75,48 @@
 
 */
 
-var appState = "STOPPED"; //possible states: RUNNING, STOPPED
+var appState = "WAITING"; //possible states: WAITING, RUNNING, STOPPED
 
 
-
-   var top1data = [];
-   var top2data = [];
-   var timestamps= [];
+   var topic1 = '';
+   var topic2 = '';
+   var topic1Data = [];
+   var topic2Data = [];
+   var timeStamps= [];
 
 $(document).ready(function(){
    setInterval(function(){
       switch (appState) {
-        case "STOPPED":
-          //getstate from python server
-          //if 'running, receive the topics via post request, do the below, else break
-          appState = "RUNNING"
+        case "WAITING":
+          $.getJSON('/getState', {
+          }, function(data) {
+              if (data["status"] == "Running") {
+                  topic1 = data["topics"][0];
+                  topic2 = data["topics"][1];
+                  myChart.data.datasets[0].label = topic1;
+                  myChart.data.datasets[1].label = topic2;
+                  myChart.update();
+                  appState = "RUNNING";
+                  }
+//              else {
+  //                 break;
+    //               }
+              });
           break;
         case "RUNNING":
     	  $.getJSON('/refreshData', {
     	  }, function(data) {
-        	top1data = data["barcelona"];
-                pos2 = data["real madrid"];
-        	top2data = [];
-                pos2.forEach(item => top2data.push(-item));
-                timestamps = data["labels"];
+        	topic1Data = data[topic1];
+                //Store the second dataset as all negative
+                pos2 = data[topic2];
+        	topic2Data = [];
+                pos2.forEach(item => topic2Data.push(-item));
+                timeStamps = data["labels"];
     	  });
-    	  myChart.data.labels = timestamps;
-    	  myChart.data.datasets[0].data = top1data;
-    	  myChart.data.datasets[1].data = top2data;
+    	  myChart.data.labels = timeStamps;
+    	  myChart.data.datasets[0].data = topic1Data;
+    	  myChart.data.datasets[1].data = topic2Data;
+
           myChart.update();
           break;
    }},5000);
