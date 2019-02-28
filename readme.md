@@ -11,13 +11,15 @@ Where $spth is a variable pointing to the local directory containing the project
 - `docker network create --driver bridge my-net`
 - Run twitter generator: 
   - `winpty docker run -it --rm --name data_server -v $spth:/home/ds/data --network my-net 
-thinkfulstudent/simple_server //bin/bash`
+simple-server //bin/bash`
+  - See Architecture below to create a `simple-server` image
 - create directory 'cps' in the same directory as `spark-streaming.py`
 - Run WebApp server by executing `app.py`, with a port exposed (9991 in this example)
-  - `winpty docker run -it --rm --name appserver -v $spth:/home/app -p 9991:9991 --network 
+  - `winpty docker run -it --rm --name app_server -v $spth:/home/app -p 9991:9991 --network 
 my-net simple-flask //bin/bash`
+  - See Architecture below to create a `simple-flask` image
 - Run Spark Stream:
-  - `winpty docker run -it --rm --name pyspark1 -v $spth:/home/jovyan --network my-net 
+  - `winpty docker run -it --rm --name pyspark -v $spth:/home/jovyan --network my-net 
 jupyter/pyspark-notebook //bin/bash`
 
 ## Architecture 
