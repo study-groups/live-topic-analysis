@@ -9,7 +9,7 @@ from datetime import datetime
 
 TCP_REMOTE_HOST = "data_server" #docker container name of tweet generator
 TCP_PORT_INPUT = 9009 #must also be specified in the server file
-TCP_REMOTE_APPSERVER = 'appserver' # docker container name of app server
+TCP_REMOTE_APPSERVER = 'app_server' # docker container name of app server
 TCP_PORT_OUTPUT = 9991 # must be exposed by app server docker container
 
 #define a dict of topics to track and count.

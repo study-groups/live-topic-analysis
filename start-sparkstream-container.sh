@@ -1,2 +1,2 @@
 
-winpty docker run -it --rm --name pyspark1 -v $spth:/home/jovyan --network thinkful-net jupyter/pyspark-notebook //bin/bash
+winpty docker run -it --rm --name pyspark -v $spth:/home/jovyan --network my-net jupyter/pyspark-notebook //bin/bash

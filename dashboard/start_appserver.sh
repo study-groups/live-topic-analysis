@@ -1,2 +1,2 @@
 
-winpty docker run -it --rm --name appserver -u 0 -v $spth\\dashboard:/home/ds/data -p 9991:9991 --network thinkful-net thinkfulstudent/simple_server //bin/bash
+winpty docker run -it --rm --name app_server -v $spth\\dashboard:/home/ds/data -p 9991:9991 --network my-net simple-flask //bin/bash

@@ -8,14 +8,26 @@ The mentions of specified topics are counted over streaming 5 second intervals. 
 Where $spth is a variable pointing to the local directory containing the project files:
 
 
-- `docker network create --driver bridge thinkful-net`
+- `docker network create --driver bridge my-net`
 - Run twitter generator: 
-  - `winpty docker run -it --rm --name data_server -v $spth:/home/ds/data --network thinkful-net thinkfulstudent/simple_server //bin/bash`
-- create directory 'cps' in some directory as `spark-streaming.py`
+  - `winpty docker run -it --rm --name data_server -v $spth:/home/ds/data --network my-net 
+thinkfulstudent/simple_server //bin/bash`
+- create directory 'cps' in the same directory as `spark-streaming.py`
+- Run WebApp server by executing `app.py`, with a port exposed (9991 in this example)
+  - `winpty docker run -it --rm --name appserver -v $spth:/home/app -p 9991:9991 --network 
+my-net simple-flask //bin/bash`
 - Run Spark Stream:
-  - `winpty docker run -it --rm --name pyspark1 -v $spth:/home/jovyan --network thinkful-net jupyter/pyspark-notebook //bin/bash`
-- Run WebApp server by executing `app.py`
-  - `winpty docker run -it --name appserver -u 0 -v $spth\\dashboard:/home/ds/data -p 9991:9991 --network thinkful-net thinkfulstudent/simple_server //bin/bash`
+  - `winpty docker run -it --rm --name pyspark1 -v $spth:/home/jovyan --network my-net 
+jupyter/pyspark-notebook //bin/bash`
 
 ## Architecture 
-- TBD
+This network of 3 docker containers streams and processes live tweets to an in-browser chart. 
+
+- Web App server: For this docker image, I simply built the `python:latest` image from Docker hub and 
+added `Flask` to the requirements.txt.
+- Spark: for this docker image, I used the `jupyter/pyspark-notebook` docker image, which comes ready with 
+pyspark.
+- Tweet Generator: For this docker image, I simply built the `python:latest` image from Docker hub and added `requests` and `requests_oauthlib` to the 
+requirements.txt.
+
+
