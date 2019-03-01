@@ -16,12 +16,8 @@ TCP_PORT_OUTPUT = 9991 # must be exposed by app server docker container
 #The keys are words that will be counted as a mention of the topic.
 #The values are the "consolidated" topics that will ultimately be tracked and charted.
 #All lowercase
-trackwords = {'barcelona' : 'barcelona',
-              'fcb'       : 'barcelona',
-              'barca'     : 'barcelona',
-              'madrid'    : 'real madrid',
-              'realmadrid': 'real madrid',
-              'mad'       : 'real madrid'}
+trackwords = {'trump' : 'trump',
+              'cohen' : 'cohen'}
 
 
 
