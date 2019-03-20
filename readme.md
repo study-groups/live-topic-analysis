@@ -1,7 +1,7 @@
 # Live Topic Analysis
 
 Live Topic Analysis is a full-stack spark streaming based analysis engine with real-time charting. 
-The mentions of specified topics are counted over streaming 5 second intervals. It also provides live visualizations and enables further predictive analysis on the topics.
+Keywords statistics are analyzed in real-time over a streaming interface. It also provides live visualizations and enables further predictive analysis on the topics.
 
 ![Process Flow](/images/Architecture.png)
 
