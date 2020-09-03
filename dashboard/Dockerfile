@@ -1,4 +1,3 @@
-
 FROM  python:3.8-slim 
 MAINTAINER mike@lenan.net
 RUN apt-get update

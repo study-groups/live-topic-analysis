@@ -1,24 +1,18 @@
-lta-tweetgen-start(){
-  docker run -it --rm --name data_server \
-  -v $LTA_ROOT:/home/ds/data \
-  --network my-net simple-server //bin/bash
-}
-
 lta-tweetgen-build(){
- docker build -t lta-tweetgen -f Dockerfile  .
+ docker build -t lta-tweetgen -f Dockerfile .
 }
 
-lta-tweetgen-start(){
-  docker run -t -p 9992:9992 lta-tweetgen 
-}
-
-
-lta-tweetgen-start2() {
+lta-tweetgen-start() {
   docker run \
   -it \
-  --rm --name tweetgen \
+  --rm \
+  --name lta-tweetgen-instance \
+  -p 9009:9009 \
   -v $LTA_ROOT/tweetgen:/home/ds/data \
-  -p 9999:9992 \
-  --network my-net simple-flask //bin/bash
+  -e TWITTER_CONSUMER_KEY \
+  -e TWITTER_CONSUMER_SECRET \
+  -e TWITTER_ACCESS_TOKEN \
+  -e TWITTER_ACCESS_SECRET \
+   lta-tweetgen 
 }
 

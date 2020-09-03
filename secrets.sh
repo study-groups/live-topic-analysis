@@ -1,5 +1,0 @@
-LTA_ROOT="/home/user/src/study-groups/live-topic-analysis"
-CONSUMER_KEY=""
-CONSUMER_SECRET=""
-ACCESS_TOKEN=""
-ACCESS_SECRET=""

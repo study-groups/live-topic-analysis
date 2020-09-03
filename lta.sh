@@ -7,7 +7,7 @@ source spark/lta-spark.sh
 source tweetgen/lta-tweetgen.sh
 
 lta-docker-create-network(){
-  docker network create --driver bridge thinkful-net
+  docker network create --driver bridge lta-net
 }
 
 lta-exit(){

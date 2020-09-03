@@ -53,10 +53,10 @@ def connect_stream_to_spark(http_resp, tcp_connection):
 
 
 if __name__ == "__main__":
-    my_auth = requests_oauthlib.OAuth1(os.environ["CONSUMER_KEY"],
-                                       os.environ["CONSUMER_SECRET"],
-                                       os.environ["ACCESS_TOKEN"],
-                                       os.environ["ACCESS_SECRET"])
+    my_auth = requests_oauthlib.OAuth1(os.environ["TWITTER_CONSUMER_KEY"],
+                                       os.environ["TWITTER_CONSUMER_SECRET"],
+                                       os.environ["TWITTER_ACCESS_TOKEN"],
+                                       os.environ["TWITTER_ACCESS_SECRET"])
 
     TCP_IP = socket.gethostbyname(socket.gethostname())
     TCP_PORT = 9009
