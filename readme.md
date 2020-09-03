@@ -7,7 +7,7 @@ Keywords statistics are analyzed in real-time over a streaming interface. It als
 
 ## Usage
 
-Where $lta_root is a variable pointing to the local directory containing the project files:
+Where $LTA_ROOT is a variable pointing to the local directory containing the project files:
 
 
 - `docker network create --driver bridge my-net`

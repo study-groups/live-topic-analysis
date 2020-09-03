@@ -1,6 +1,6 @@
 #!/bin/bash
 PS1="lta> "
-LTA_ROOT="/home/mricos/src/study-groups/live-topic-analysis"
+LTA_ROOT="/home/user/src/study-groups/live-topic-analysis"
 CONSUMER_KEY=""
 CONSUMER_SECRET=""
 ACCESS_TOKEN=""
