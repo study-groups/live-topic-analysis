@@ -7,21 +7,21 @@ Keywords statistics are analyzed in real-time over a streaming interface. It als
 
 ## Usage
 
-Where $spth is a variable pointing to the local directory containing the project files:
+Where $lta_root is a variable pointing to the local directory containing the project files:
 
 
 - `docker network create --driver bridge my-net`
 - Run twitter generator: 
-  - `winpty docker run -it --rm --name data_server -v $spth:/home/ds/data --network my-net 
+  - `docker run -it --rm --name data_server -v $lta_root:/home/ds/data --network my-net 
 simple-server //bin/bash`
   - See Architecture below to create a `simple-server` image
 - create directory 'cps' in the same directory as `spark-streaming.py`
 - Run WebApp server by executing `app.py`, with a port exposed (9991 in this example)
-  - `winpty docker run -it --rm --name app_server -v $spth:/home/app -p 9991:9991 --network 
+  - `docker run -it --rm --name app_server -v $lta_root:/home/app -p 9991:9991 --network 
 my-net simple-flask //bin/bash`
   - See Architecture below to create a `simple-flask` image
 - Run Spark Stream:
-  - `winpty docker run -it --rm --name pyspark -v $spth:/home/jovyan --network my-net 
+  - `docker run -it --rm --name pyspark -v $lta_root:/home/jovyan --network my-net 
 jupyter/pyspark-notebook //bin/bash`
 
 ## Architecture 
