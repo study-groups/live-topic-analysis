@@ -1,10 +1,7 @@
 #!/bin/bash
+PS1_OLD=$PS1
 PS1="lta> "
-LTA_ROOT="/home/user/src/study-groups/live-topic-analysis"
-CONSUMER_KEY=""
-CONSUMER_SECRET=""
-ACCESS_TOKEN=""
-ACCESS_SECRET=""
+source secrets.sh
 source dashboard/lta-dashboard.sh
 source spark/lta-spark.sh
 source tweetgen/lta-tweetgen.sh
@@ -13,6 +10,9 @@ lta-docker-create-network(){
   docker network create --driver bridge thinkful-net
 }
 
+lta-exit(){
+  PS1=$PS1_OLD
+}
 lta-help(){
   echo "\
 To run Live Topic Analysis:
