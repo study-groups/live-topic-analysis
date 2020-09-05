@@ -6,7 +6,8 @@ lta-tweetgen-start() {
   docker run \
   -it \
   --rm \
-  --name lta-tweetgen-instance \
+  --name lta-tweetgen \
+  --network lta-net \
   -p 9009:9009 \
   -v $LTA_ROOT/tweetgen:/home/ds/data \
   -e TWITTER_CONSUMER_KEY \

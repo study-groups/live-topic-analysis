@@ -70,4 +70,4 @@ if __name__ == "__main__":
     conn, addr = s.accept()
     print(f"Connected... Starting getting tweets.")
     resp = get_tweet_stream(my_auth) 
-    connect_stream_to_spark(resp, conn) 
+    connect_stream_to_spark(resp, conn)

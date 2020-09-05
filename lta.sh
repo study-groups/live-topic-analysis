@@ -10,6 +10,12 @@ lta-docker-create-network(){
   docker network create --driver bridge lta-net
 }
 
+lta-docker-list(){
+  docker image list
+  docker container list
+  
+}
+
 lta-exit(){
   PS1=$PS1_OLD
 }
