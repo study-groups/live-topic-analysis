@@ -6,14 +6,18 @@ lta-spark-build(){
    echo "use dockerhub: jupyter/pyspark-notebook"
 }
 
+lta-spark-kill(){
+  docker container kill lta-spark
+}
+
 lta-spark-start(){
 docker run -it \
 --rm \
 -d \
 --name lta-spark \
--p 8888:8888 \
+--network lta-net \
 -v `pwd`:/home/jovyan/work \
---network lta-net jupyter/pyspark-notebook
+jupyter/pyspark-notebook
 }
 
 lta-spark-start-notebook(){
