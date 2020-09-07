@@ -16,7 +16,7 @@ docker run -it \
 --name lta-spark \
 --network lta-net \
 -p 8888:8888 \
--v `pwd`:/home/jovyan/work \
+--mount type=bind,source="$(pwd)",target=/app \
 jupyter/pyspark-notebook:latest /bin/bash
 }
 
