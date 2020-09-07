@@ -13,11 +13,11 @@ lta-spark-kill(){
 lta-spark-start(){
 docker run -it \
 --rm \
--d \
 --name lta-spark \
 --network lta-net \
+-p 8888:8888 \
 -v `pwd`:/home/jovyan/work \
-jupyter/pyspark-notebook
+jupyter/pyspark-notebook:latest /bin/bash
 }
 
 lta-spark-start-notebook(){

@@ -12,7 +12,7 @@ def get_tweet_stream(auth_object):
     #return streaming response object
     url = 'https://stream.twitter.com/1.1/statuses/filter.json'
     query_data = [('language', 'en'),
-                  ('track', 'trump, cohen'),
+                  ('track', 'biden, trump'),
                   ('tweet_mode','extended')]
     query_url = url + '?' + \
         '&'.join([str(t[0]) + '=' + str(t[1]) for t in query_data])
@@ -36,9 +36,9 @@ def connect_stream_to_spark(http_resp, tcp_connection):
             else:
                 tweet_text = full_tweet['text']
             #Uncommend the below to see the data in the shell
-            #print(f"Created at: {timestamp.encode('utf-8')}")
-            #print(f"Tweet Text: {tweet_text.encode('utf-8')}")
-            #print("------------------------------------------")
+            print(f"Created at: {timestamp.encode('utf-8')}")
+            print(f"Tweet Text: {tweet_text.encode('utf-8')}")
+            print("------------------------------------------")
             tweet_info = json.dumps({
                             'timestamp':timestamp,
                             'text':tweet_text,

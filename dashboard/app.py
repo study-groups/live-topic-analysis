@@ -42,11 +42,7 @@ if __name__ == "__main__":
 
 
 #print(batch)
-
 #>>>{'trump':50, 'cohen':23}
 
-
-
 #print(state)
-
 #>>>{'trump': [50], 'cohen': [23], 'labels': ['']}

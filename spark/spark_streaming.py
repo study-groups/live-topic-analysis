@@ -6,10 +6,9 @@ import requests
 import json
 from datetime import datetime
 
-
 TCP_REMOTE_HOST = "lta-tweetgen.lta-net" #docker container name of tweet generator
 TCP_PORT_INPUT = 9009 #must also be specified in the server file
-TCP_REMOTE_APPSERVER = 'lta-dashboard' # docker container name of app server
+TCP_REMOTE_APPSERVER = 'lta-dashboard.lta-net' # docker container name of app server
 TCP_PORT_OUTPUT = 9991 # must be exposed by app server docker container
 
 #define a dict of topics to track and count.
@@ -17,7 +16,7 @@ TCP_PORT_OUTPUT = 9991 # must be exposed by app server docker container
 #The values are the "consolidated" topics that will ultimately be tracked and charted.
 #All lowercase
 trackwords = {'trump' : 'trump',
-              'cohen' : 'cohen'}
+              'biden' : 'biden'}
 
 
 
