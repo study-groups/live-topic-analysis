@@ -10,9 +10,17 @@ lta-docker-create-network(){
   docker network create --driver bridge lta-net
 }
 
+
+lta-docker-init(){
+  sudo usermod -aG docker admin
+  echo "requires logging out and back in."
+  echo "to test, try: docker volumes ls"
+}
+
 lta-exit(){
   PS1=$PS1_OLD
 }
+
 lta-help(){
   echo "\
 To run Live Topic Analysis:
