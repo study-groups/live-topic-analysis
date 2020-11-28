@@ -72,11 +72,9 @@
 
    let day = DaysEnum.tuesday
 
-
 */
 
 var appState = "WAITING"; //possible states: WAITING, RUNNING, STOPPED
-
 
    var topic1 = '';
    var topic2 = '';
@@ -120,5 +118,4 @@ $(document).ready(function(){
           myChart.update();
           break;
    }},5000);
-
 });

@@ -2,6 +2,10 @@ lta-tweetgen-build(){
  docker build -t lta-tweetgen -f Dockerfile .
 }
 
+lta-tweetgen-kill(){
+  docker container kill lta-tweetgen
+}
+
 lta-tweetgen-start() {
   docker run \
   -it \
