@@ -1,4 +1,6 @@
 #https://docs.docker.com/storage/volumes/
+
+PS1="lta-dashboard> "
 lta-dashboard-build(){
  docker build -t lta-dashboard -f Dockerfile  .
 }
@@ -30,5 +32,4 @@ lta-dashboard-start-cli() {
 
 lta-dashboard-kill() {
   docker container kill lta-dashboard
-
 }

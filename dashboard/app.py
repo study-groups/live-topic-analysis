@@ -13,10 +13,12 @@ def get_chart_page():
 def refresh_graph_data():
         global alldata
         return jsonify(alldata)
+
 @app.route('/getState')
 def update_server_state():
         global serverstate
         return jsonify(serverstate)
+
 @app.route('/updateData', methods=['POST'])
 def update_data():
         global alldata, serverstate
@@ -37,9 +39,6 @@ def update_data():
         return "success",201
 if __name__ == "__main__":
         app.run(host='0.0.0.0', port=9991) 
-
-
-
 
 #print(batch)
 #>>>{'trump':50, 'cohen':23}
