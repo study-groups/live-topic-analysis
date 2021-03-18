@@ -10,14 +10,29 @@ analysis on the topics.
 
 ## Usage
 
+`>source lta.sh
+lta> lta-help
+
+<insert output here>
+
+lta> lta-dashboard-make 
+lta> lta-spark-make
+lta> lta-tweetgen-make;
+
+
+lta> lta-dashboard-start
+lta> lta-
 Where $LTA_ROOT is a variable pointing to the local directory
-containing the project files:
+containing `lta.sh`. 
 
 
 - `docker network create --driver bridge lta-net`
 - Run **tweet generator**:
-  - `docker run -it --rm --name data_server -v $lta_root:/home/ds/data --network my-net
-simple-server //bin/bash`
+  - `docker run -it --rm  \
+        --name tweetgen \
+       -v $lta_root:/home/ds/data \ 
+        --network my-net \
+     tweetgen //bin/bash`
   - See Architecture below to create a `simple-server` image
 - create directory 'cps' in the same directory as `spark-streaming.py`
 

@@ -1,0 +1,87 @@
+Devops
+- Start a markserv server on lta.study-groups.org
+
+Readme.md
+- Copy the output of lta-help into the readme
+- add sections for building, running and stopping
+
+Dashboard
+- add ipython3 to Dockerfile (is added but does not work)
+- add debugging to app.py via
+   https://www.codecademy.com/articles/how-to-use-ipython-python3
+
+Spark
+- Add comments via Tweet-to-Nom
+
+NOM
+- define JSON version 
+{"id":$(date +%s%N),
+"type":"data.list.integers",
+"data":"31034\n1032\n5654\n22234\n\n"
+}
+
+Tweetgen (to become part of Nectar Collector)
+- pass a job-request object. Does not need to be NOM.
+{
+  "action":"newCollectorJob",
+  "jobName":"search for A and/or B.",
+  "collectorObjectsPerFile": 50,
+  "delayInMsBetweenObjects": 0,
+  "searchTerms: "biden harris"
+
+}
+
+- returns NOM object in JSON format.
+{
+  "id":3423423,
+  "type":"data.collector.job",
+  "data":`
+    {"searchTerms":"biden harris",
+     "jobName": "search for A and/or B.",
+     "hostName":"hostname-assiged-by-collector",
+     "dispatchPort": "Dispatch (e.g. Spark) uses this port for map/reduce."
+     "collectorPort": "Dispatch writes to this port for storage."
+     "typeReturned": "data.tweet-ver001"
+    }`
+}
+
+Spark/Dispatch
+- user pass NOM data.collector.job to Spark/Dispatch
+- Dispatch connects to hostName:port
+- Looks at type of every object, match on typeReturned
+- store in cache, send to collectorPort if set
+
+
+Nectar Collector
+- recieves NOM objects as JSON arrays containing objectsPerFile
+- NC writes NOM_ROOT/jobId/$(date +%s%N).json
+(Alternatively, Dispatch could connect to raw socket and dump
+NOM objects as stanzas. NC would be responsible for chunking 
+into data size. Data would be stored in .nom format (not JSON.)
+E.g.
+245242342423424
+data.jobId.reducerOutputType
+0.45
+1.34
+2.2
+..
+50.5
+ 
+
+Nectar
+- This is the commandline that interacts with dispatch and nectar collector
+- Eg.> nectar show {jobs, cache}
+- Eg.> nectar show jobN {map function, reducer) 
+- Eg.> nectar apply mapFun reduceFun jobId
+- Eg.> nectar apply mapFun reduceFun jobId fromDate toDate
+
+if toDate is "now" job is restarted so reducer keeps writing new NOM
+objects of reducerOutputType.
+
+Future interface:
+
+nectar> start job.json # coordinates between nectar collecor and dispatch
+nectar> stat job.json  # runs stats reducer on given job
+nectar> disk job.json  # shows resources
+nectar> jobMaxSize 10000 # last 10000 bytes kept, rest deleted
+ 

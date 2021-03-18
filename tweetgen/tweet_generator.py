@@ -6,7 +6,6 @@ import socket
 import sys
 import datetime
 
-
 def get_tweet_stream(auth_object):
     #formulate twitter request and
     #return streaming response object
@@ -16,17 +15,18 @@ def get_tweet_stream(auth_object):
                   ('tweet_mode','extended')]
     query_url = url + '?' + \
         '&'.join([str(t[0]) + '=' + str(t[1]) for t in query_data])
-    response = requests.get(query_url, auth=auth_object, stream=True)
+    responseTwitterStream =\
+        requests.get(query_url, auth=auth_object, stream=True)
     print(f"Query: {query_url}")
-    print(f"Response: {response}")
-    return response
+    print(f"Response: {responseTwitterStream}")
+    return responseTwitterStream
 
 
-def connect_stream_to_spark(http_resp, tcp_connection):
+def connect_stream_to_spark(streamFromTwitter, sparkTcpConnection):
     #encode and send tweet data from the response
     #to a spark session
     print("Stream is Live...")
-    for line in http_resp.iter_lines():
+    for line in streamFromTwitter.iter_lines():
         try:
             full_tweet = json.loads(line)
             timestamp = full_tweet['created_at']
@@ -46,7 +46,7 @@ def connect_stream_to_spark(http_resp, tcp_connection):
             #Send the encoded json bytes.
             #The trailing newline is needed to trigger
             #the consistent receipt in spark as RDDs
-            tcp_connection.send(tweet_info+b'\n')
+            sparkTcpConnection.send(tweet_info+b'\n')
         except Exception as e:
             e = sys.exc_info()[1]
             print(f"Errored without sending: {e}")
@@ -58,16 +58,17 @@ if __name__ == "__main__":
                                        os.environ["TWITTER_ACCESS_TOKEN"],
                                        os.environ["TWITTER_ACCESS_SECRET"])
 
-    TCP_IP = socket.gethostbyname(socket.gethostname())
-    TCP_PORT = 9009
+    LOCAL_TCP_IP = socket.gethostbyname(socket.gethostname())
+    SPARK_TCP_PORT = 9009
 
-    print(f"Host: {TCP_IP} :: Port {TCP_PORT}")
-    conn = None
+    print(f"Host: {LOCAL_TCP_IP} :: Port to Spark: {SPARK_TCP_PORT}")
+    connToSpark = None
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((TCP_IP, TCP_PORT))
+    s.bind((LOCAL_TCP_IP, SPARK_TCP_PORT))
     s.listen(1)
-    print(f"Waiting for TCP connection...")
-    conn, addr = s.accept()
-    print(f"Connected... Starting getting tweets.")
-    resp = get_tweet_stream(my_auth) 
-    connect_stream_to_spark(resp, conn)
+    print(f"Waiting for Spark to connect to us.")
+    connToSpark, addr = s.accept()
+
+    print(f"Connected... Starting getting tweets from twitter.")
+    respTwitter = get_tweet_stream(my_auth)
+    connect_stream_to_spark(respTwitter, connToSpark)

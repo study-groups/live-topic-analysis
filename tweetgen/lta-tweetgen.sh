@@ -1,3 +1,4 @@
+PS1="tweetgen> "
 lta-tweetgen-build(){
  docker build -t lta-tweetgen -f Dockerfile .
 }
@@ -19,6 +20,22 @@ lta-tweetgen-start() {
   -e TWITTER_CONSUMER_SECRET \
   -e TWITTER_ACCESS_TOKEN \
   -e TWITTER_ACCESS_SECRET \
-   lta-tweetgen 
+   lta-tweetgen
 }
 
+lta-tweetgen-loop(){
+  while sleep 0.1; do
+  local hash=$(date "+%s%N")
+  local data=$(lta-tweetgen-random trump biden)
+  cat <<EOF
+{"hash":"$hash", "data":"$data"}
+EOF
+done | nc -lk 9010
+}
+
+lta-tweetgen-random(){
+  local r=$RANDOM;
+  local c=$1;
+  (( $r > 16000 )) || c=$2
+  echo $c
+}

@@ -1,5 +1,8 @@
 from flask import Flask,jsonify,request
 from flask import render_template
+#from IPython import embed; embed()
+import ipdb;
+
 
 app = Flask(__name__)
 
@@ -9,6 +12,10 @@ alldata = {'labels':[]}
 @app.route("/")
 def get_chart_page():
         return render_template('chart.html')
+
+# Client calls this periodically
+# only after state transition 
+# from waiting to running.
 @app.route('/refreshData')
 def refresh_graph_data():
         global alldata
@@ -19,8 +26,10 @@ def update_server_state():
         global serverstate
         return jsonify(serverstate)
 
+# Spark calls this to update data.
 @app.route('/updateData', methods=['POST'])
 def update_data():
+        ipdb.set_trace()
         global alldata, serverstate
         if request.form:
             serverstate['status'] = 'Running'
