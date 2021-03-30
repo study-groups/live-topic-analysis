@@ -28,7 +28,6 @@ Tweetgen (to become part of Nectar Collector)
   "collectorObjectsPerFile": 50,
   "delayInMsBetweenObjects": 0,
   "searchTerms: "biden harris"
-
 }
 
 - returns NOM object in JSON format.
@@ -41,7 +40,7 @@ Tweetgen (to become part of Nectar Collector)
      "hostName":"hostname-assiged-by-collector",
      "dispatchPort": "Dispatch (e.g. Spark) uses this port for map/reduce."
      "collectorPort": "Dispatch writes to this port for storage."
-     "typeReturned": "data.tweet-ver001"
+     "typeReturned": "data.tweet-$searchTerms"
     }`
 }
 
@@ -50,7 +49,6 @@ Spark/Dispatch
 - Dispatch connects to hostName:port
 - Looks at type of every object, match on typeReturned
 - store in cache, send to collectorPort if set
-
 
 Nectar Collector
 - recieves NOM objects as JSON arrays containing objectsPerFile
@@ -84,4 +82,3 @@ nectar> start job.json # coordinates between nectar collecor and dispatch
 nectar> stat job.json  # runs stats reducer on given job
 nectar> disk job.json  # shows resources
 nectar> jobMaxSize 10000 # last 10000 bytes kept, rest deleted
- 
