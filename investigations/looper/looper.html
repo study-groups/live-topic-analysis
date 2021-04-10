@@ -135,11 +135,7 @@ function App() {
     return ( <AppContainer time msg="hi from props"/>);
     */
 
-    // REASONING
 
-    // the thought here was to use setObject("hello", {hello: "newValue"}) 
-    // in the console
-    // then click on the button to get it to re-render
 
     const [number, setValue] = useForceUpdate();
 
@@ -152,7 +148,7 @@ function App() {
     return (
         <React.Fragment>
             <span>{msg}</span>
-            <button>Start stream</button>
+            <button onClick={onClick}>Start stream</button>
         </React.Fragment>
     );
 }
