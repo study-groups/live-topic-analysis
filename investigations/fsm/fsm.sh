@@ -4,7 +4,7 @@ fsm-read(){
     export FSM_STATE=${1:-"$FSM_STATE"} # first arg or no change
 
     # Read, Evaluate, Print Loop
-    while read action payload; do
+    while read -p "fsm> " action payload; do
 
       local state=$FSM_STATE
       local stateIsValid=false
@@ -31,7 +31,8 @@ fsm-read(){
         local type="$type.error.state.notfound"
         date +%s%N
         echo $type
-        echo "new state: $new_state not found"
+        echo "actionIsValid: $actionIsValid"
+        echo "new state: $new_state"
         echo "still using $FSM_STATE" 
       fi 
 
@@ -104,5 +105,3 @@ S4                     <- return new state
 
 EOF
 }
-
-
