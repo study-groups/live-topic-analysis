@@ -2,5 +2,7 @@ config.sh
 secrets.sh
 cps
 .ipynb_checkpoints
+spark/__pycache__/
+spark/err
 
 

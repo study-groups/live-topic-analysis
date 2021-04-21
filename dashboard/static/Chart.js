@@ -76,11 +76,11 @@
 
 var appState = "WAITING"; //possible states: WAITING, RUNNING, STOPPED
 
-   var topic1 = '';
-   var topic2 = '';
-   var topic1Data = [];
-   var topic2Data = [];
-   var timeStamps= [];
+var topic1 = '';
+var topic2 = '';
+var topic1Data = [];
+var topic2Data = [];
+var timeStamps= [];
 
 $(document).ready(function(){
    setInterval(function(){
