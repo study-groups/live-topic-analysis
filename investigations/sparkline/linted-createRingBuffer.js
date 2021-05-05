@@ -1,3 +1,7 @@
+/*jslint
+    node
+*/
+
 function createRingBuffer(size) {
     const buffer = new Array(size);
     const limit = size;
