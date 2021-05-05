@@ -3,8 +3,8 @@ function createRingBuffer(size) {
     const limit = size;
     let addIndex = 0;
     let getIndex = 0;
- 
-   function pushItems(i = limit - 1) {
+
+    function pushItems(i = limit - 1) {
         if (i > 0) {
             buffer[i] = buffer[i - 1];
             i = i - 1;
@@ -18,14 +18,12 @@ function createRingBuffer(size) {
         getIndex,
 
         add: function (item) { // back of line == buffer.length - 1
-            buffer[addIndex] = item; 
+            buffer[addIndex] = item;
             addIndex = (addIndex + 1) % limit;
-            console.log(buffer);
         },
 
         replace: function (item) {   // back of line == buffer.length-1
-            buffer[addIndex - 1] = item; 
-            console.log(buffer);
+            buffer[addIndex - 1] = item;
         },
 
         get: (key) => buffer[key],
@@ -39,7 +37,6 @@ function createRingBuffer(size) {
         push: function (item) {
             pushItems();
             buffer[0] = item;
-            console.log(buffer);
         }
     };
 }
