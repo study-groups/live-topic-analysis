@@ -1,3 +1,9 @@
+/* Run tests with node
+    1. Run node
+    2. .load fileToTest
+    3. .load testFile
+*/
+
 function testSize(size) {
     const rb = createRingBuffer(size);
     const condition = !assert.equal(rb.buffer.length, size);
