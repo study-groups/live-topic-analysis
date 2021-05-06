@@ -15,18 +15,6 @@ function runTest(fn) {
     }
 }
 
-TESTS.push(
-    sizeOfBufferIsAsExpected,
-    pushesItemsToTheNextIndex,
-    addsItemsToTheNextIndex,
-    addWillOverWrite,
-    pushesLastItemOut,
-    replacesLastItemInBuffer,
-    getsTheCorrectItemByIndex,
-    getsNextItemInRingBuffer
-);
-TESTS.forEach(runTest);
-
 function sizeOfBufferIsAsExpected() {
     const size = 4;
     const rb = createRingBuffer(size);
@@ -38,7 +26,7 @@ function pushesItemsToTheNextIndex() {
     const rb = createRingBuffer(size);
     rb.push({id: 1});
     rb.push({id: 2});
-    assert.deepEqual(rb.buffer[0], {id: 2})
+    assert.deepEqual(rb.buffer[0], {id: 2});
     assert.deepEqual(rb.buffer[1], {id: 1});
 }
 
@@ -78,9 +66,9 @@ function replacesLastItemInBuffer() {
     const size = 4;
     const rb = createRingBuffer(size);
     rb.add({id: 1});
-    rb.add({id: 2})
+    rb.add({id: 2});
     rb.replace({id: 3});
-    assert.deepEqual(rb.buffer[0], {id: 1}) 
+    assert.deepEqual(rb.buffer[0], {id: 1});
     assert.deepEqual(rb.buffer[1], {id: 3});
 }
 
@@ -108,3 +96,16 @@ function getsNextItemInRingBuffer() {
     deepEqual(rb.getNext(), rb.buffer[3]); 
     deepEqual(rb.getNext(), rb.buffer[0]);
 }
+
+TESTS.push(
+    sizeOfBufferIsAsExpected,
+    pushesItemsToTheNextIndex,
+    addsItemsToTheNextIndex,
+    addWillOverWrite,
+    pushesLastItemOut,
+    replacesLastItemInBuffer,
+    getsTheCorrectItemByIndex,
+    getsNextItemInRingBuffer
+);
+
+TESTS.forEach(runTest);
