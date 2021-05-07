@@ -20,7 +20,7 @@ function createRingBuffer(size) {
         getIndex,
 
         add: function(item) { // back of line == buffer.length-1
-            buffer[addIndex] = { ...item }; // make copy
+            buffer[addIndex] = {...item}; // make copy
             addIndex = (addIndex + 1) % limit;
             return this;
         },
