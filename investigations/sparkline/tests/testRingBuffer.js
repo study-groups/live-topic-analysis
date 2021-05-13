@@ -14,116 +14,198 @@ function runTest(fn) {
 }
 
 function sizeOfBufferIsAsExpected() {
-    const rb = createRingBuffer(Array(4));
-    assert.equal(rb.buffer.length, 4);
+    const rb = RingBuffer(Array(4));
+    const obj = JSON.parse(rb.toJson())
+    assert.equal(obj.d.length, 4);
+}
+
+function bufferToJson() {
+    const rb = RingBuffer(Array(4));
+    rb.push({id: 1});
+    assert.equal(
+        rb.toJson(),
+        '{"r":0,"w":0,"d":[{"id":1},null,null,null]}'
+    );
+    assert.deepEqual(
+        JSON.parse(rb.toJson()),
+        {"r":0, "w": 0, "d":[{"id":1},null,null,null]}
+    );
+}
+
+function bufferIsPrivate() {
+    const rb = RingBuffer(Array(4));
+    assert.equal(rb.buffer, undefined);
 }
 
 function pushesItemsToTheNextIndex() {
-    const rb = createRingBuffer(Array(4));
+    const rb = RingBuffer(Array(4));
     rb.push({id: 1});
     rb.push({id: 2});
-    assert.deepEqual(rb.buffer[0], {id: 2});
-    assert.deepEqual(rb.buffer[1], {id: 1});
+    assert.equal(
+        rb.toJson(),
+        '{"r":0,"w":0,"d":[{"id":2},{"id":1},null,null]}'
+    );
+    assert.deepEqual(
+        JSON.parse(
+            rb.toJson()
+        ),
+        {"r":0,"w":0,"d":[{"id":2}, {"id":1}, null, null]}
+    );
 }
 
 function addsItemsToTheNextIndex() {
-    const rb = createRingBuffer(Array(4));
+    const rb = RingBuffer(Array(4));
     rb.add({id: 1});
     rb.add({id: 2});
-    assert.deepEqual(rb.buffer[0], {id: 1});
-    assert.deepEqual(rb.buffer[1], {id: 2});
+    assert.equal(
+        rb.toJson(),
+        '{"r":0,"w":2,"d":[{"id":1},{"id":2},null,null]}'
+    );
+    assert.deepEqual(
+        JSON.parse(
+            rb.toJson()
+        ),
+        {"r":0,"w":2,"d":[{"id":1}, {"id":2}, null, null]}
+    );
 }
 
 function addWillOverWrite() {
-    const rb = createRingBuffer(Array(4));
+    const rb = RingBuffer(Array(4));
     rb.add({id: 1});
     rb.add({id: 2});
     rb.add({id: 3});
     rb.add({id: 4});
     rb.add({id: 5});
-    assert.deepEqual(rb.buffer[0], {id: 5});
+    assert.equal(
+        rb.toJson(),
+        '{"r":0,"w":1,"d":[{"id":5},{"id":2},{"id":3},{"id":4}]}'
+    );
+    assert.deepEqual(
+        JSON.parse(
+            rb.toJson()
+        ),
+        {"r":0,"w":1,"d":[{"id":5}, {"id":2}, {"id":3}, {"id":4}]}
+    );
 }
 
 function pushesLastItemOut() {
-    const rb = createRingBuffer(Array(4));
+    const rb = RingBuffer(Array(4));
     rb.push({id: 1});
     rb.push({id: 2});
     rb.push({id: 3});
     rb.push({id: 4});
     rb.push({id: 5});
-    const lastItem = rb.buffer.length - 1;
-    assert.deepEqual(rb.buffer[lastItem], {id: 2});
+    assert.equal(
+        rb.toJson(),
+        '{"r":0,"w":0,"d":[{"id":5},{"id":4},{"id":3},{"id":2}]}'
+    );
+    assert.deepEqual(
+        JSON.parse(
+            rb.toJson()
+        ),
+        {"r":0,"w":0,"d":[{"id":5}, {"id":4}, {"id":3}, {"id":2}]}
+    );
 }
 
-function replacesLastItemInBuffer() {
-    const rb = createRingBuffer(Array(4));
+function replacesItemInBuffer() {
+    const rb = RingBuffer(Array(4));
     rb.add({id: 1});
     rb.add({id: 2});
     rb.replace({id: 3});
-    assert.deepEqual(rb.buffer[0], {id: 1});
-    assert.deepEqual(rb.buffer[1], {id: 3});
+    assert.equal(
+        rb.toJson(),
+        '{"r":0,"w":2,"d":[{"id":1},{"id":3},null,null]}'
+    );
+    assert.deepEqual(
+        JSON.parse(
+            rb.toJson()
+        ),
+        {"r":0,"w":2,"d":[{"id":1},{"id":3},null,null]}
+    );
 }
 
 function getsTheCorrectItemByIndex() {
-    const rb = createRingBuffer(Array(4));
+    const rb = RingBuffer(Array(4));
     rb.add({id: 1});
     rb.add({id: 2});
     rb.add({id: 3});
     rb.add({id: 4});
-    assert.deepEqual(rb.get(2), rb.buffer[2]);
+    rb.replace({id: 3});
+    assert.deepEqual(rb.get(2), {"id": 3});
 }
 
 function getsNextItemInRingBuffer() {
-    const rb = createRingBuffer(Array(4));
+    const rb = RingBuffer(Array(4));
     rb.add({id: 1});
     rb.add({id: 2});
     rb.add({id: 3});
     rb.add({id: 4});
-    const { deepEqual } = assert;
-    deepEqual(rb.getNext(), rb.buffer[0]);
-    deepEqual(rb.getNext(), rb.buffer[1]);
-    deepEqual(rb.getNext(), rb.buffer[2]); 
-    deepEqual(rb.getNext(), rb.buffer[3]); 
-    deepEqual(rb.getNext(), rb.buffer[0]);
+    assert.deepEqual(rb.getNext(), {id: 1});
+    assert.deepEqual(rb.getNext(), {id: 2});
+    assert.deepEqual(rb.getNext(), {id: 3});
+    assert.deepEqual(rb.getNext(), {id: 4});
+    assert.deepEqual(rb.getNext(), {id: 1});
 }
 
 function getsTheCorrectItemByIndex_CopyArray() {
-    x = [ {id:1}, {id:2}, {id:3}, {id:4} ];
-    const rb = createRingBuffer(x);
-    assert.deepEqual(rb.get(2), rb.buffer[2]);
-    assert.deepEqual(x, rb.buffer);
+    const x = [ {id:1}, {id:2}, {id:3}, {id:4} ];
+    const rb = RingBuffer(x);
+    assert.deepEqual(rb.get(2), {id: 3});
+    assert.deepEqual(x, JSON.parse(rb.toJson()).d);
     x[1]={id:6};  // changing rb.buffer out from under it!
-    assert.deepEqual({id:2}, rb.get(1));  // should stay 2
+    assert.deepEqual(rb.get(1), {id:2});  // should stay 2
 }
 
 function getsTheCorrectItemByIndex_RefArray() {
-    x = [ {id:1}, {id:2}, {id:3}, {id:4} ];
-    y = [ {id:5}, {id:2}, {id:3}, {id:4} ];
-    const rb = createRingBuffer(x,inplace=true);
+    const x = [ {id:1}, {id:2}, {id:3}, {id:4} ];
+    const y = [ {id:5}, {id:2}, {id:3}, {id:4} ];
+    const rb = RingBuffer(x, 0, 0, false);
     assert.notDeepEqual(x,y);
-    assert.deepEqual(rb.get(2), rb.buffer[2]);
-    assert.deepEqual(x, rb.buffer);
+    assert.deepEqual(rb.get(2), {id:3});
+    assert.deepEqual(x, JSON.parse(rb.toJson()).d);
     x[1]={id:6};  // changing rb.buffer out from under it!
-    assert.notDeepEqual({id:2}, rb.get(1));  // not 2
-    assert.deepEqual({id:6}, rb.get(1));     // but 6! 
+    assert.notDeepEqual(rb.get(1), {id:2});  // not 2
+    assert.deepEqual(rb.get(1), {id:6});     // but 6! 
 }
 
+function getsCorrectWriteIndex() {
+    const rb = RingBuffer(Array(4));
+    rb.add({id:1});
+    rb.add({id:2});
+    assert.equal(rb.getWriteIndex(), 2);
+}
 
-var TESTS=[];
-var TESTS_SHORT=[];
-TESTS_SHORT.push(sizeOfBufferIsAsExpected);
+function getsCorrectReadIndex() {
+    const rb = RingBuffer(Array(4));
+    rb.add({id:1});
+    rb.add({id:2});
+    rb.add({id:3});
+    rb.add({id:4});
+    rb.getNext();
+    rb.getNext();
+    assert.equal(rb.getReadIndex(), 2);
+}
+
+const TESTS = [];
+//const TESTS_SHORT=[];
+//TESTS_SHORT.push(sizeOfBufferIsAsExpected);
 
 TESTS.push(
     sizeOfBufferIsAsExpected,
+    bufferToJson,
+    bufferIsPrivate,
     pushesItemsToTheNextIndex,
     addsItemsToTheNextIndex,
     addWillOverWrite,
     pushesLastItemOut,
-    replacesLastItemInBuffer,
+    replacesItemInBuffer,
     getsTheCorrectItemByIndex,
     getsNextItemInRingBuffer,
     getsTheCorrectItemByIndex_CopyArray,
-    getsTheCorrectItemByIndex_RefArray
+    getsTheCorrectItemByIndex_RefArray,
+    getsCorrectWriteIndex,
+    getsCorrectReadIndex
 );
 
 TESTS.forEach(runTest);
+process.exit(0);
