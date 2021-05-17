@@ -4,9 +4,19 @@ function Node(props) {
 }
 
 function createGraphNode(json, i) {
+    if (json) {
+        const { data, id, type } = json;
+        return <Node data={data} key={id} />;
+    }
+    return <Node data={0} key={i} />;
+}
+
+/*
+function createGraphNode(json, i) {
     const { data, id, type } = json;
     return <Node data={data} key={id} />;
 }
+*/
 
 function App() {
     useEffect(function() {
@@ -35,14 +45,17 @@ function App() {
     );
 }
 
+console.log("model: ", getModel());
+// <div id="meter2"><pre>{getModel().data2}</pre></div>
 function Meter(){
     return (
         <React.Fragment>
             <div id="meter">{getModel().data.map(createGraphNode)}</div>
+            <div id="meter2">{getModel().data2}</div>
         </React.Fragment> 
     );
 }
 
 //ReactDOM.render(<App isStreamOn={getModel().isStreamOn} />, MOUNT_POINT);
-updateView();
+//updateView();
 
