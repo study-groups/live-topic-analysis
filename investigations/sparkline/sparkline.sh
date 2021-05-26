@@ -9,13 +9,30 @@ export JSON_FILE="$PWD/index.json"
 export JSON_DIR="$PWD"
 
 js_files=( 
+./z-RingBuffer.js
+./z-app-jobs.js
 ./dependencies.js
 ./model.js
-./controller.js
-./view.js
-./createRingBuffer.js
+./z-controller-jobs.js
+./z-view-jobs.js
 )
 
+sparkline-build-mike () {
+  export HEADER="$(cat ./header.html)"
+  export CDN="$(cat ./cdn.html)"
+  export JS="$(cat ./mike/dependencies.js \
+                   ./mike/model.js \
+                   ./mike/controller.js \
+                   ./mike/view.js \
+                   ./mike/RingBuffer.js\
+                   | envsubst)"
+  export FOOTER="$(cat ./footer.html)"
+  cat index.env | envsubst > index-m.html
+}
+
+sparkline-start-mike() {
+  webtool-node-server  1235 ./index-m.html .
+}
 sparkline-build () {
   export HEADER="$(cat ./header.html)"
   export CDN="$(cat ./cdn.html)"
