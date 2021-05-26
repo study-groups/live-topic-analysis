@@ -8,12 +8,25 @@ function RingBuffer(
     let buffer;
 
     function _initArray(array, copy) {
+
+        if (typeof(array) === "number") {
+            buffer = new Array(array);
+            return;
+        }
+
+        if (typeof(array) === "string") {
+            buffer = JSON.parse(array).d;
+            return;
+        }
+
         if (copy === false) {
             buffer = array; // use reference
+            return;
         }
 
         if (copy) {
             buffer = [...array];
+            return;
         }
     }
     _initArray(array, copy);
@@ -34,13 +47,12 @@ function RingBuffer(
         getIndex = obj.r;
     }
 
-    // should this be toJsonString?
     function toJson() {
         return JSON.stringify(
             {
+                d: [...buffer],
                 r: getIndex,
-                w: addIndex,
-                d: [...buffer]
+                w: addIndex
             }
         );
     }
@@ -68,14 +80,14 @@ function RingBuffer(
     }
 
     return {
-        toJson,
-        fromJson,
-        getWriteIndex: () => addIndex,
-        getReadIndex: () => getIndex,
         add,
+        fromJson,
+        get,
+        getNext,
+        getReadIndex: () => getIndex,
+        getWriteIndex: () => addIndex,
         push,
         replace,
-        get,
-        getNext
+        toJson
     };
 }
