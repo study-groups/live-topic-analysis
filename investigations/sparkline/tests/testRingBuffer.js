@@ -19,12 +19,28 @@ function sizeOfBufferIsAsExpected() {
     assert.equal(obj.d.length, 4);
 }
 
+function instantiatesWithNumber() {
+    const rb = RingBuffer(4);
+    const dataArray = JSON.parse(rb.toJson()).d;
+    const len = dataArray.length;
+    assert.equal(len, 4)
+}
+
+function instantiatesWithJson() {
+    const rb = RingBuffer(Array(4));
+    rb.push({id: 1});
+    rb.push({id: 2});
+    rb.push({id: 3});
+    const newRb = RingBuffer(rb.toJson());
+    assert.equal(rb.toJson(), newRb.toJson());
+}
+
 function bufferToJson() {
     const rb = RingBuffer(Array(4));
     rb.push({id: 1});
     assert.equal(
         rb.toJson(),
-        '{"r":0,"w":0,"d":[{"id":1},null,null,null]}'
+        '{"d":[{"id":1},null,null,null],"r":0,"w":0}'
     );
     assert.deepEqual(
         JSON.parse(rb.toJson()),
@@ -41,10 +57,6 @@ function pushesItemsToTheNextIndex() {
     const rb = RingBuffer(Array(4));
     rb.push({id: 1});
     rb.push({id: 2});
-    assert.equal(
-        rb.toJson(),
-        '{"r":0,"w":0,"d":[{"id":2},{"id":1},null,null]}'
-    );
     assert.deepEqual(
         JSON.parse(
             rb.toJson()
@@ -57,10 +69,6 @@ function addsItemsToTheNextIndex() {
     const rb = RingBuffer(Array(4));
     rb.add({id: 1});
     rb.add({id: 2});
-    assert.equal(
-        rb.toJson(),
-        '{"r":0,"w":2,"d":[{"id":1},{"id":2},null,null]}'
-    );
     assert.deepEqual(
         JSON.parse(
             rb.toJson()
@@ -76,10 +84,6 @@ function addWillOverWrite() {
     rb.add({id: 3});
     rb.add({id: 4});
     rb.add({id: 5});
-    assert.equal(
-        rb.toJson(),
-        '{"r":0,"w":1,"d":[{"id":5},{"id":2},{"id":3},{"id":4}]}'
-    );
     assert.deepEqual(
         JSON.parse(
             rb.toJson()
@@ -95,10 +99,6 @@ function pushesLastItemOut() {
     rb.push({id: 3});
     rb.push({id: 4});
     rb.push({id: 5});
-    assert.equal(
-        rb.toJson(),
-        '{"r":0,"w":0,"d":[{"id":5},{"id":4},{"id":3},{"id":2}]}'
-    );
     assert.deepEqual(
         JSON.parse(
             rb.toJson()
@@ -112,10 +112,6 @@ function replacesItemInBuffer() {
     rb.add({id: 1});
     rb.add({id: 2});
     rb.replace({id: 3});
-    assert.equal(
-        rb.toJson(),
-        '{"r":0,"w":2,"d":[{"id":1},{"id":3},null,null]}'
-    );
     assert.deepEqual(
         JSON.parse(
             rb.toJson()
@@ -192,6 +188,8 @@ const TESTS = [];
 
 TESTS.push(
     sizeOfBufferIsAsExpected,
+    instantiatesWithNumber,
+    instantiatesWithJson,
     bufferToJson,
     bufferIsPrivate,
     pushesItemsToTheNextIndex,
