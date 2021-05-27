@@ -1,0 +1,302 @@
+<html>
+<p>
+Example of Sparkline component.
+</p>
+<body>
+<div id="root"></div>
+<div id="sparkline-container"></div>
+<script crossorigin 
+  src="https://unpkg.com/react@16/umd/react.development.js">
+</script>
+<script crossorigin 
+  src="https://unpkg.com/react-dom@16/umd/react-dom.development.js">
+</script>
+<script crossorigin
+  src="https://unpkg.com/d3@6.7.0/dist/d3.min.js">
+</script>
+<script crossorigin 
+  src="https://unpkg.com/babel-standalone@6.26.0/babel.js">
+</script>
+<script type="text/babel">
+function RingBuffer(
+    array = [],
+    addIndex = 0,
+    getIndex = 0,
+    copy = true
+) {
+
+    let buffer;
+
+    function _initArray(array, copy) {
+
+        if (typeof(array) === "number") {
+            buffer = new Array(array);
+            return;
+        }
+
+        if (typeof(array) === "string") {
+            buffer = JSON.parse(array).d;
+            return;
+        }
+
+        if (copy === false) {
+            buffer = array; // use reference
+            return;
+        }
+
+        if (copy) {
+            buffer = [...array];
+            return;
+        }
+    }
+    _initArray(array, copy);
+
+    const len = buffer.length;
+
+    function _shiftItems(i = len - 1) {
+        if (i > 0) {
+            buffer[i] = buffer[i - 1];
+            return _shiftItems(i - 1);
+        }
+    }
+
+    function fromJson(json) {
+        const obj = JSON.parse(json);
+        buffer = [...obj.d];
+        addIndex = obj.w;
+        getIndex = obj.r;
+    }
+
+    function toJson() {
+        return JSON.stringify(
+            {
+                d: [...buffer],
+                r: getIndex,
+                w: addIndex
+            }
+        );
+    }
+    // item: Object
+    function add(item) {
+        buffer[addIndex] = Object.assign({}, item);
+        addIndex = (addIndex + 1) % len;
+    }
+    // item: Object
+    function push(item) {
+        _shiftItems();
+        buffer[0] = Object.assign({}, item);
+    }
+    // item: Object
+    function replace(item) {
+        buffer[addIndex - 1] = Object.assign({}, item);
+    }
+
+    const get = (key) => buffer[key];
+
+    function getNext(offset = 0) {
+        let retIndex = getIndex;
+        getIndex = (len + getIndex + offset + 1) % len;
+        return buffer[retIndex];
+    }
+
+    return {
+        add,
+        fromJson,
+        get,
+        getNext,
+        getReadIndex: () => getIndex,
+        getWriteIndex: () => addIndex,
+        push,
+        replace,
+        toJson
+    };
+}
+// model assumes this function exists and will call it after setModel()
+function updateView() {
+    ReactDOM.render(<App />, document.getElementById("root"));
+}
+
+window.addEventListener("load", function(event) {
+    localStorage.clear();
+    // if local storage does NOT contain a key named "model"
+    // create the key of "model" and pass its initial state
+    if (localStorage.getItem("model") === null) {
+        setObject("model",
+            { 
+                app: {
+                    name: "app",
+                    jobId: "000",
+                    on: false,
+                    rb: new RingBuffer(Array(20)).toJson()
+                },
+                jobA: {
+                    name: "jobA",
+                    jobId: "001",
+                    on: false,
+                    rb: new RingBuffer(Array(10)).toJson()
+                },
+                jobB: {
+                    name: "jobB",
+                    jobId: "002",
+                    on: false,
+                    rb: new RingBuffer(Array(10)).toJson()
+                },
+                jobC: {
+                    name: "jobC",
+                    on: false,
+                    rb: new RingBuffer(Array(10)).toJson()
+                }
+            }
+        );
+        console.log("localStorage Model initialized.");
+    }
+    updateView();
+});
+// DEPENDENCIES
+// "http://:1234/json"
+const DATA_SERVER_URL = "http://165.227.30.170:1234/json";
+const { useEffect } = React;
+const { 
+    range, 
+    select,
+    scaleLinear 
+} = d3;
+// MODEL INIT
+function getObject(key) {
+    // gets value from local storage by key
+    // parses string value to object
+    // returns object  
+    return JSON.parse(localStorage.getItem(key));
+}
+
+function setObject(key, obj) {
+    // stringifies object and assigns to key in local storage
+    // returns object assignment
+    localStorage.setItem(key, JSON.stringify(obj))
+    return obj;
+}
+
+function getModel() {
+    return getObject("model");
+}
+
+function setModel(obj) {
+    setObject("model", obj);
+    updateView(); // re-renders Virtual DOM tree
+}
+//CONTROLLERS
+function handleGetData() {
+
+    fetch(DATA_SERVER_URL)
+        .then(handleErrors)
+        .then(response => response.json())
+        .then(function(jsonObject) {
+            const rbJson = getModel()["app"].rb;
+            const rb = new RingBuffer(rbJson);
+            rb.push(jsonObject);
+
+            setModel({
+                // use previous state
+                ...getModel(),
+      
+                // old data plus the new from response
+                ["app"]: {
+                    ...getModel()["app"],
+                    rb: rb.toJson()
+                }
+            });
+        })
+        .catch(error => console.log(error))
+}
+
+function handleClick(job) {
+    setModel({
+        ...getModel(),
+        [job.name]: {
+            ...getModel()[job.name],
+            on: !getModel()[job.name].on
+        }
+    });
+}
+
+function handleErrors(response) {
+    // if response is not ok
+    if (!response.ok) {
+        throw Error(response.statusText);
+    }
+    return response;
+}
+// VIEW
+function Node(props) {
+    return <span> {props.data} </span>;
+}
+
+function createGraphNode(json, i) {
+    if (json) {
+        const { data, id, type } = json;
+        return <Node data={data} key={id} />;
+    }
+    return <Node data={0} key={i} />;
+}
+
+function App() {
+    useEffect(function() {
+        const interval = setInterval(function() {
+            if(getModel()["app"].on) {
+                handleGetData();
+            }             
+        },
+            1000
+        );
+
+        return () => clearInterval(interval);
+
+    }, []);
+
+
+
+
+    return (
+        <React.Fragment>
+            <h1>Sparkline</h1>
+            <Meter job={ getModel().app } />
+            <Button job={ getModel().app } />
+            <Meter job={ getModel().jobA } />
+            <Button job={ getModel().jobA } />
+            <Meter job={ getModel().jobB } />
+            <Button job={ getModel().jobB } />
+        </React.Fragment>
+    );
+}
+
+function Button({ job }) {
+
+    return (
+        <button
+            id={job.name}
+            onClick={ () => handleClick(job) }
+        >
+            {
+                !getModel()[job.name].on ? "Turn On" : "Turn Off"
+            }
+        </button>
+    );
+}
+
+console.log("model: ", getModel());
+
+function Meter({ job }){
+
+    const data = JSON.parse(job.rb).d;
+    console.log("job in Meter: ", job)
+    return (
+        <React.Fragment>
+            <div>Meter {job.name}</div>
+            <div id={job.name}>{data.map(createGraphNode)}</div>
+        </React.Fragment> 
+    );
+}
+</script>
+</script>
+</body>
+</html>

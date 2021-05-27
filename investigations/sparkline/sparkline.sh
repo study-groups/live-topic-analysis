@@ -9,12 +9,12 @@ export JSON_FILE="$PWD/index.json"
 export JSON_DIR="$PWD"
 
 js_files=( 
-./z-RingBuffer.js
-./z-app-jobs.js
+./RingBuffer.js
+./app.js
 ./dependencies.js
 ./model.js
-./z-controller-jobs.js
-./z-view-jobs.js
+./m-controller.js
+./m-view.js
 )
 
 sparkline-build-mike () {

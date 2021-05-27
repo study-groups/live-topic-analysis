@@ -12,27 +12,11 @@ function createGraphNode(json, i) {
 }
 
 function App() {
-    useEffect(function() {
-        const interval = setInterval(function() {
-            if(getModel()["app"].on) {
-                handleGetData();
-            }             
-        },
-            1000
-        );
-
-        return () => clearInterval(interval);
-
-    }, []);
-
-
 
 
     return (
         <React.Fragment>
             <h1>Sparkline</h1>
-            <Meter job={ getModel().app } />
-            <Button job={ getModel().app } />
             <Meter job={ getModel().jobA } />
             <Button job={ getModel().jobA } />
             <Meter job={ getModel().jobB } />
@@ -58,6 +42,21 @@ function Button({ job }) {
 console.log("model: ", getModel());
 
 function Meter({ job }){
+
+    useEffect(function() {
+
+        const interval = setInterval(function() {
+            if(getModel()[job.name].on) {
+                handleGetData(getModel()[job.name]);
+            }             
+        },
+            1000
+        );
+
+        return () => clearInterval(interval);
+
+    }, []);
+
 
     const data = JSON.parse(job.rb).d;
     console.log("job in Meter: ", job)

@@ -6,7 +6,7 @@
 # source test.sh
 
 files=(
-../createRingBuffer.js 
+../z-RingBuffer.js 
 #./test-createRingBuffer.js
 ./testRingBuffer.js
 

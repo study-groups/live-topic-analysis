@@ -1,21 +1,38 @@
 //CONTROLLERS
-function handleGetData() {
-
-    fetch(DATA_SERVER_URL)
+function handleGetData(job) {
+/*
+NOM D3 object:
+ID
+data.d3.tsd
+{
+  date:aaaa,
+  value:bbbb
+}
+*/
+    fetch(DATA_SERVER_URL) // FIX: fetch particular job ID and time window
         .then(handleErrors)
+        // converts Buffer to JSON
         .then(response => response.json())
-        .then(function(jsonObject) {
-            const rbJson = getModel()["app"].rb;
+        .then(function(jsonObject) {  // NOM (id, type, data)
+            const rbJson = getModel()[job.name].rb;
             const rb = new RingBuffer(rbJson);
             rb.push(jsonObject);
+
+            // maybe use NOM data type as property in model. 
+            // i.e. data.random becomes Random[] in the model
+            // {random: Random[]}
+
+            // Channel: defined by a unique type
+            // A slot: is defined by a job ID whose data type 
+            //         is consistent with the channel holding the slot.
 
             setModel({
                 // use previous state
                 ...getModel(),
       
                 // old data plus the new from response
-                ["app"]: {
-                    ...getModel()["app"],
+                [job.name]: {
+                    ...getModel()[job.name],
                     rb: rb.toJson()
                 }
             });

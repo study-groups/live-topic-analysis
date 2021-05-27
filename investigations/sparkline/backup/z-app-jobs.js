@@ -10,12 +10,6 @@ window.addEventListener("load", function(event) {
     if (localStorage.getItem("model") === null) {
         setObject("model",
             { 
-                app: {
-                    name: "app",
-                    jobId: "000",
-                    on: false,
-                    rb: new RingBuffer(Array(20)).toJson()
-                },
                 jobA: {
                     name: "jobA",
                     jobId: "001",

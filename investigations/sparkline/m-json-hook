@@ -1,0 +1,4 @@
+job_fifo="/home/admin/src/live-topic-analysis/tweetgen/fifo"
+read line < $job_fifo
+printf "$line"
+#echo "'"$line"'"
