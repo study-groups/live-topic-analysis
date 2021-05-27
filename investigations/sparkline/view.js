@@ -33,10 +33,10 @@ function App() {
             <h1>Sparkline</h1>
             <Meter job={ getModel().app } />
             <Button job={ getModel().app } />
-            <Meter job={ getModel().jobA } />
-            <Button job={ getModel().jobA } />
-            <Meter job={ getModel().jobB } />
-            <Button job={ getModel().jobB } />
+            <Meter job={ getModel()["001"] } />
+            <Button job={ getModel()["001"] } />
+            <Meter job={ getModel()["002"] } />
+            <Button job={ getModel()["002"] } />
         </React.Fragment>
     );
 }

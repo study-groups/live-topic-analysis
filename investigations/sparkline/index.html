@@ -1,6 +1,14 @@
 <html>
 <p>
 Example of Sparkline component.
+<pre>
+"An App subscribes to a JobBoard on the server."
+"A ui-meter subscribes to a ui-job."
+"A ss-job subscribes to a filter whose output 
+ is mediated by an Adaptor whose raw output 
+ fills into a FIFO. Each ss-job has its own
+ FIFO located in nectar/jobs/jobId/fifo."
+</pre>
 </p>
 <body>
 <div id="root"></div>
@@ -129,14 +137,14 @@ window.addEventListener("load", function(event) {
                     on: false,
                     rb: new RingBuffer(Array(20)).toJson()
                 },
-                jobA: {
-                    name: "jobA",
+                "001": {
+                    name: "001",
                     jobId: "001",
                     on: false,
                     rb: new RingBuffer(Array(10)).toJson()
                 },
-                jobB: {
-                    name: "jobB",
+                "002": {
+                    name: "002",
                     jobId: "002",
                     on: false,
                     rb: new RingBuffer(Array(10)).toJson()
@@ -193,8 +201,28 @@ function handleGetData() {
         .then(function(jsonObject) {
             const rbJson = getModel()["app"].rb;
             const rb = new RingBuffer(rbJson);
-            rb.push(jsonObject);
+            //rb.push(jsonObject);
+            rb.push(jsonObject[0]);
+            rb.push(jsonObject[1]);
 
+            jsonObject.forEach( function(obj) {
+                if(obj.parent=="001"){
+                    const rbJobJson = getModel()[obj.parent].rb;
+                    const rbJob = new RingBuffer(rbJobJson);
+                    rbJob.push(obj);
+                    setModel({
+                    // use previous state
+                    ...getModel(),
+          
+                    // old data plus the new from response
+                    [obj.parent]: {
+                            ...getModel()[obj.parent],
+                            rb:rbJob.toJson()
+                        }
+                    });
+                } 
+            });
+                        
             setModel({
                 // use previous state
                 ...getModel(),
@@ -261,10 +289,10 @@ function App() {
             <h1>Sparkline</h1>
             <Meter job={ getModel().app } />
             <Button job={ getModel().app } />
-            <Meter job={ getModel().jobA } />
-            <Button job={ getModel().jobA } />
-            <Meter job={ getModel().jobB } />
-            <Button job={ getModel().jobB } />
+            <Meter job={ getModel()["001"] } />
+            <Button job={ getModel()["001"] } />
+            <Meter job={ getModel()["002"] } />
+            <Button job={ getModel()["002"] } />
         </React.Fragment>
     );
 }

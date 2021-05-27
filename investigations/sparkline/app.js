@@ -16,14 +16,14 @@ window.addEventListener("load", function(event) {
                     on: false,
                     rb: new RingBuffer(Array(20)).toJson()
                 },
-                jobA: {
-                    name: "jobA",
+                "001": {
+                    name: "001",
                     jobId: "001",
                     on: false,
                     rb: new RingBuffer(Array(10)).toJson()
                 },
-                jobB: {
-                    name: "jobB",
+                "002": {
+                    name: "002",
                     jobId: "002",
                     on: false,
                     rb: new RingBuffer(Array(10)).toJson()
