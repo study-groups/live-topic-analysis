@@ -13,8 +13,8 @@ js_files=(
 ./app.js
 ./dependencies.js
 ./model.js
-./controller.js
-./view.js
+./z-controller.js
+./z-view.js
 )
 
 sparkline-build-mike () {

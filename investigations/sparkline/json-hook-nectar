@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# This is a server side dispatcher 
+# that dispatches to nectardb channels by 
+# calling $db/$channel/update.
+# By Convention, channel update writes to 
+# $db/$channel/fifo.
+
+db="/home/admin/src/live-topic-analysis/investigations/sparkline/nectardb"
+job="bayes"
+#querys=("min=1&max=10" "min=7&max=")
+querys=( $(cd "$db/$job";  ls -d */ | sed 's/.$//') )
+low=${1:-0}
+high=${2:-20}
+
+# Do the updates of all channels
+for query in "${querys[@]}"
+do
+(cd "$db/$job/$query"; ./update) > "$db/$job/$query/fifo" &
+done
+
+# Collect channels into single job fifo
+for query in "${querys[@]}"
+do
+cat "$db/$job/$query/fifo" > $db/$job/fifo
+done
+
+cat "$db/$job/fifo"  # this goes to fetch, needs jq
