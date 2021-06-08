@@ -105,6 +105,10 @@ RUNNING_start(){
 
 # write NOM object out to fifo. This is called 
 # by the main while loop above.
+
+# should call ./nectar-compose instead of having 
+# code hard coded in RUNNING_update()
+
 RUNNING_update(){
   #echo "Hit ctrl-c to stop RUNNING"
 
@@ -115,7 +119,6 @@ RUNNING_update(){
   job="bayes"
   channel="$job/min=15&max=52"
   $db/$channel/update > $db/$channel/fifo
-
 
   # After all job updates fill their channel fifos, 
   # transfer all channel fifos to db fifo.
