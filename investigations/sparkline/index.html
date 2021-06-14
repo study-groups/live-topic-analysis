@@ -1,5 +1,5 @@
 <html>
-<p>
+<!-- <p>
 Example of Sparkline component.
 <pre>
 "An App subscribes to a JobBoard on the server."
@@ -9,7 +9,7 @@ Example of Sparkline component.
  fills into a FIFO. Each ss-job has its own
  FIFO located in nectar/jobs/jobId/fifo."
 </pre>
-</p>
+</p> -->
 <body>
 <div id="root"></div>
 <div id="sparkline-container"></div>
@@ -130,30 +130,15 @@ window.addEventListener("load", function(event) {
     // create the key of "model" and pass its initial state
     if (localStorage.getItem("model") === null) {
         setObject("model",
-            { 
-                app: {
-                    name: "app",
-                    jobId: "000",
-                    on: false,
-                    rb: new RingBuffer(Array(20)).toJson()
-                },
-                "001": {
-                    name: "001",
-                    jobId: "001",
-                    on: false,
-                    rb: new RingBuffer(Array(10)).toJson()
-                },
-                "002": {
-                    name: "002",
-                    jobId: "002",
-                    on: false,
-                    rb: new RingBuffer(Array(10)).toJson()
-                },
-                jobC: {
-                    name: "jobC",
-                    on: false,
-                    rb: new RingBuffer(Array(10)).toJson()
-                }
+            {
+                channels: [
+                    {
+                        channel: "app",
+                        on: false,
+                        id: "app",
+                        rb: new RingBuffer(Array(20)).toJson()
+                    }
+                ]
             }
         );
         console.log("localStorage Model initialized.");
@@ -163,7 +148,7 @@ window.addEventListener("load", function(event) {
 // DEPENDENCIES
 // "http://:1234/json"
 const DATA_SERVER_URL = "http://165.227.30.170:1234/json";
-const { useEffect } = React;
+const { useEffect, useState } = React;
 const { 
     range, 
     select,
@@ -193,58 +178,110 @@ function setModel(obj) {
     updateView(); // re-renders Virtual DOM tree
 }
 //CONTROLLERS
+
+// Parent
+            /*
+               id: 001
+               type: data.job
+               parent: nectar
+               data: ?job=tweet&lang=en
+
+               *On the concept of an action type vs data type*
+               id: 005
+               type: action.job
+               parent: nectar
+               data: ?job=tweet&lang=en
+
+            */
+            // Child (aka data produced by the job)
+            /*
+                id: 1899
+                type: data.tweet
+                parent: 001
+                data: Kraft macaroni
+            */
+
 function handleGetData() {
 
     fetch(DATA_SERVER_URL)
         .then(handleErrors)
         .then(response => response.json())
-        .then(function(jsonObject) {
-            const rbJson = getModel()["app"].rb;
-            const rb = new RingBuffer(rbJson);
-            //rb.push(jsonObject);
-            rb.push(jsonObject[0]);
-            rb.push(jsonObject[1]);
+        .then(function(jsonArray) {
+            console.log("original json array from server: ", jsonArray);
+            // app is always in index 0
+            const appRbJson = getModel().channels[0].rb;
+            const rb = new RingBuffer(appRbJson);
+            jsonArray.forEach(obj => rb.push(obj));
+            
+            const app = {
+                ...getModel().channels[0], 
+                rb: rb.toJson() 
+            };
 
-            jsonObject.forEach( function(obj) {
-                if(obj.parent=="001"){
-                    const rbJobJson = getModel()[obj.parent].rb;
-                    const rbJob = new RingBuffer(rbJobJson);
-                    rbJob.push(obj);
-                    setModel({
-                    // use previous state
-                    ...getModel(),
-          
-                    // old data plus the new from response
-                    [obj.parent]: {
-                            ...getModel()[obj.parent],
-                            rb:rbJob.toJson()
-                        }
-                    });
-                } 
+            const channelMapper = new Map();
+
+            jsonArray.forEach(function(nom) {
+                channelMapper.set(nom.channel, {
+                    channel: nom.channel,                                   
+                    id: nom.id,
+                    on: false,                                                  
+                    rb: new RingBuffer(Array(10)).toJson()
+                });
+                const channel = channelMapper.get(nom.channel);
+                const rb = new RingBuffer(channel.rb);
+                rb.push(nom);
+                channelMapper.set(nom.channel, {...channel, rb: rb.toJson()})
             });
-                        
-            setModel({
-                // use previous state
-                ...getModel(),
-      
-                // old data plus the new from response
-                ["app"]: {
-                    ...getModel()["app"],
-                    rb: rb.toJson()
-                }
-            });
+
+            const channels = Array.from(
+                channelMapper,
+                ([channelName, obj]) => ({ channel: channelName, ...obj})
+            );
+
+            // app is always at index 0
+            const allChannels = [app, ...channels];
+
+            setModel({channels: allChannels});
+
         })
         .catch(error => console.log(error))
 }
 
+
+
 function handleClick(job) {
+    const refreshedChannels = [
+        ...getModel().channels
+    ];
+    const refreshChannelHere = refreshedChannels.findIndex(
+        item => item.channel === job.channel   
+    );
+    console.log("job: ", job);
+    console.log("refresh channel index: ", refreshChannelHere);
+    console.log(
+        "channel to refresh: ",
+        refreshedChannels[
+            refreshChannelHere
+        ]
+    );
+    
+    refreshedChannels[refreshChannelHere] = {
+        channel: job.channel,
+        id: job.id,
+        rb: job.rb,
+        on: !job.on
+    };
+    console.log(
+        "channel refreshed: ",
+        refreshedChannels[
+            refreshChannelHere
+        ]
+    );
     setModel({
-        ...getModel(),
-        [job.name]: {
-            ...getModel()[job.name],
-            on: !getModel()[job.name].on
-        }
+        channels: refreshedChannels
     });
+    console.log(getModel())
+    
 }
 
 function handleErrors(response) {
@@ -268,9 +305,10 @@ function createGraphNode(json, i) {
 }
 
 function App() {
+    // App is always at index 0 and others are added thereafter.
     useEffect(function() {
         const interval = setInterval(function() {
-            if(getModel()["app"].on) {
+            if(getModel().channels[0].on) {
                 handleGetData();
             }             
         },
@@ -281,31 +319,60 @@ function App() {
 
     }, []);
 
-
-
+    const appChannel = getModel().channels[0];
+    const otherChannels = () => getModel().channels
+        .slice(1) // skip index 0 where app is
+        .map(createMeterButtonPair); // map data to other meters and buttons
 
     return (
         <React.Fragment>
             <h1>Sparkline</h1>
-            <Meter job={ getModel().app } />
-            <Button job={ getModel().app } />
-            <Meter job={ getModel()["001"] } />
-            <Button job={ getModel()["001"] } />
-            <Meter job={ getModel()["002"] } />
-            <Button job={ getModel()["002"] } />
+            <Meter job={ appChannel } />
+            <Button job={ appChannel } />
+            <br />
+            {otherChannels()}
+            <Form />
         </React.Fragment>
     );
 }
 
-function Button({ job }) {
+function Form() {
+    const [cliText, setCliText] = useState("");
+
+    function handleChange(e) {
+        setCliText(e.target.value);
+    }
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        alert("send command: " + cliText);
+        setCliText("");
+    }
 
     return (
+        <form
+            onSubmit={handleSubmit}        
+        >
+            <input 
+                type="text"
+                value={cliText}
+                onChange={handleChange}
+            />
+            <button>Submit</button>
+        </form>
+    );
+}
+
+function Button({ job }) {
+    return (
         <button
-            id={job.name}
+            id={job.channel}
             onClick={ () => handleClick(job) }
         >
             {
-                !getModel()[job.name].on ? "Turn On" : "Turn Off"
+                !getModel().channels.find(
+                    ({channel}) => channel === job.channel
+                ).on ? "Turn On" : "Turn Off"
             }
         </button>
     );
@@ -314,14 +381,23 @@ function Button({ job }) {
 console.log("model: ", getModel());
 
 function Meter({ job }){
-
     const data = JSON.parse(job.rb).d;
-    console.log("job in Meter: ", job)
+
     return (
         <React.Fragment>
-            <div>Meter {job.name}</div>
-            <div id={job.name}>{data.map(createGraphNode)}</div>
+            <div>Meter for channel: {job.channel}</div>
+            <div id={job.channel}>{data.map(createGraphNode)}</div>
+            <br />
         </React.Fragment> 
+    );
+}
+
+function createMeterButtonPair(job) {
+    return (
+        <React.Fragment>
+            <Meter job={job} />
+            <Button job={job} />
+        </React.Fragment>
     );
 }
 </script>
