@@ -22,13 +22,72 @@
                 data: Kraft macaroni
             */
 
-function handleGetData() {
+function handleInput(cliInput) {
+    if (
+        /^\?([\w-]+(=[\w-]*)?(&[\w-]+(=[\w-]*)?)*)?$/.test(cliInput)
+    ) {
+        // it's already a query
+        return cliInput
+    }
+    // otherwise, turn it into a query
+    const query = "?" + cliInput 
+            .replace(/ /g, "").replace(/,/g, "&");
+    return query;
+}
 
-    fetch(DATA_SERVER_URL)
-        .then(handleErrors)
-        .then(response => response.json())
-        .then(function(jsonArray) {
-            console.log("original json array from server: ", jsonArray);
+async function handleGetData(query) {
+
+    try {
+        const response = await fetch(DATA_SERVER_URL+query);
+        const json = await response.json();
+        const errors = new RingBuffer(getModel().errors);
+
+        const appRbJson = getModel().channels[0].rb;
+        const rb = new RingBuffer(appRbJson);
+
+        // if it's not an error, push it to the stdout ringbuffer
+        // otherwise, push it to the error ringbuffer
+        json.type !== "data.error" ? rb.push(json) : errors.push(json);
+        
+        const app = {
+            ...getModel().channels[0], 
+            rb: rb.toJson() 
+        };
+
+        const channels = [app];
+
+        json.type !== "data.error" 
+            ? setModel({
+                errors: errors.toJson(),
+                channels,
+                status: "OK"
+            }) 
+
+            : setModel({
+                errors: errors.toJson(), 
+                channels, 
+                status: errors.get(0).data
+            });
+
+        //setModel({errors: errors.toJson(), channels, status: "OK"});
+     
+    } catch(e) {
+        const message = "An error has occurred: ";
+        setModel({
+            ...getModel(),
+            status:e.message
+        });
+        alert(e);
+        //throw new Error(message);
+    }
+
+    
+   
+        //.then(handleErrors)
+        //.then(response => response.json())
+        //.then(function(response => response) {
+/*
+            console.log("server output: ", response.text());
             // app is always in index 0
             const appRbJson = getModel().channels[0].rb;
             const rb = new RingBuffer(appRbJson);
@@ -89,9 +148,8 @@ function handleGetData() {
 
         })
         .catch(error => console.log(error))
+ */
 }
-
-
 
 function handleClick(job) {
     const refreshedChannels = [
@@ -100,14 +158,6 @@ function handleClick(job) {
     const refreshChannelHere = refreshedChannels.findIndex(
         item => item.channel === job.channel   
     );
-    console.log("job: ", job);
-    console.log("refresh channel index: ", refreshChannelHere);
-    console.log(
-        "channel to refresh: ",
-        refreshedChannels[
-            refreshChannelHere
-        ]
-    );
     
     refreshedChannels[refreshChannelHere] = {
         channel: job.channel,
@@ -115,17 +165,9 @@ function handleClick(job) {
         rb: job.rb,
         on: !job.on
     };
-    console.log(
-        "channel refreshed: ",
-        refreshedChannels[
-            refreshChannelHere
-        ]
-    );
     setModel({
         channels: refreshedChannels
     });
-    console.log(getModel())
-    
 }
 
 function handleErrors(response) {
