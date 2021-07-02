@@ -41,6 +41,16 @@ function IDLE_stop(){
     return gStates.IDLE;    
 }
 
+function IDLE_update(){
+    return gStates.IDLE;    
+}
+
+function RUNNING_update(){
+    handleGetData("?action=update");
+    return gStates.RUNNING;
+}
+
+
 /*
 function Fsm(){
     states=["RUNNING", "IDLE"];
@@ -73,6 +83,12 @@ function enumToKeyAction(actionId){
     return enumToKey(gActions,actionId);
 }
 
+function findEnumFromStateEnumArray(val) {
+    return function ([s, id]) {
+        return id === val;
+    }
+}
+
 function enumToKey(enumerator, val){
     // Object.entries(gStates) => Array[Array[S, ENUM]]
     // filter moves through the arrays
@@ -86,8 +102,7 @@ function enumToKey(enumerator, val){
     // entries are [k,v], eg [string, id]
     // [0][0] means unbox the first and only filtered object [0]
     // which is an array of two elements, get the first,[0]
-    return Object.entries(enumerator)                
-                 .filter(([s, id]) => id === val)[0][0];
+    return Object.entries(enumerator).filter(([s, id]) => id === val)[0][0];
 }
 
 //function fsmCaller(state,action){
@@ -96,6 +111,10 @@ function enumToKey(enumerator, val){
 
 function isQueryString(input) {
     return /^\?([\w-]+(=[\w-]*)?(&[\w-]+(=[\w-]*)?)*)?$/.test(input);
+}
+
+function isNull(input) {
+    return input === null;
 }
 
 function isAction(input) {
@@ -115,18 +134,20 @@ function handleInput(cliInput) {
         //const newState = window[ getModel().state +"_stop"]();
         const stateStr = enumToKeyState(getModel().stateId);
         //const state =Object.entries(getModel().state);
-        const newStateId = window[ stateStr+"_"+cliInput]();
+        const newStateId = window[ stateStr+"_"+cliInput ]();
+        const newStateStr =enumToKeyState(newStateId);
         console.log(`New state ${enumToKeyState(newStateId)}`);
 
-        // set model.state=newState;
-        setModel({
-            ...getModel(),
-            stateId: newStateId
-        });
 
         // if RUNNING, fetch, if IDLE, dont. => occurring in useEffect
         //  "status": "Acceptable local fsm."
-          
+
+        // ties REPL with FSM
+        const stateIdAfterUpdate = window[ newStateStr+"_update" ]();
+        setModel({
+            ...getModel(),
+            stateId: stateIdAfterUpdate
+        });
         return;
     }
     
@@ -134,23 +155,91 @@ function handleInput(cliInput) {
         // it's already a query
         return cliInput
     }
+    /*
     // otherwise, turn it into a query
     const query = "?" + cliInput 
             .replace(/ /g, "").replace(/,/g, "&");
     return query;
+    */
+   
+    // Otherwise, it's not a command
+    setModel({...getModel(), status: "Command not found"});
 }
 
 async function handleGetData(query) {
 
     try {
         const response = await fetch(DATA_SERVER_URL+query);
-        const json = await response.json();
-        const errors = new RingBuffer(getModel().errors);
-        const heartbeat = new RingBuffer(getModel().heartbeat);
+        const heartbeatPacket = await response.json();
 
-        const appRbJson = getModel().channels[0].rb;
-        const rb = new RingBuffer(appRbJson);
+        // RingBuffers, et al
+        const prevChannels = getModel().channels; // JSON string
+        // Parsing to Array[Object] and removing Nulls
+        const prevChannelData = JSON.parse(
+            prevChannels
+        ).d.filter(item => !isNull(item)); // Array[Object]
+        const channelsRb = new RingBuffer(new Array(20));
 
+        //console.log({prevChannels});
+        //console.log({prevChannelData});
+        //console.log({channelsRb});
+
+        // Previous data and new
+        const refreshedData = [
+            ...prevChannelData, 
+            ...heartbeatPacket
+        ];
+
+        //console.log({refreshedData});
+
+        // Mapper
+        const channelMapper = new Map();
+        
+        refreshedData.forEach(function(nom) {
+            const name = nom.channel;
+            delete nom.channel;
+            const isChannel = channelMapper.has(name);
+
+            if (!isChannel) {
+                const newRb = new RingBuffer(new Array(10));
+                newRb.push(nom);
+                channelMapper.set(name, {
+                    channel: name,
+                    on: false,
+                    rb: newRb.toJson()
+                });
+            }
+
+            if (isChannel) {
+                const channel = channelMapper.get(name);
+                const prevRb = new RingBuffer(channel.rb);
+                prevRb.push(nom);
+                channelMapper.set(
+                    name,
+                    Object.assign(
+                        channel,
+                        {rb: prevRb.toJson()}
+                    )
+                );
+            }
+
+        });
+
+        const channels = Array.from(
+            channelMapper,
+            function([channelName, obj]) {
+                return Object.assign({channel: channelName}, obj);
+            }
+        );
+        console.log({channels})
+
+        channels.forEach((item) => channelsRb.push(item));
+        const channelNames = channels.map(item => item.channel);
+        console.log({channelNames})
+        
+        setModel({...getModel(), channels: channelsRb.toJson()})
+
+        /*
         // if it's not an error, push it to the stdout ringbuffer
         // otherwise, push it to the error ringbuffer
         json.type === "data.error" ? errors.push(json) : 
@@ -182,7 +271,7 @@ async function handleGetData(query) {
             });
 
         //setModel({errors: errors.toJson(), channels, status: "OK"});
-     
+        */
     } catch(e) {
         const message = "An error has occurred: ";
         setModel({

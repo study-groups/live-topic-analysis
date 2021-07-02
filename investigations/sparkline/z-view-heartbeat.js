@@ -3,12 +3,9 @@ function Node(props) {
     return <span> {props.data} </span>;
 }
 
-function createGraphNode(json, i) {
-    if (json) {
-        const { data, id, type } = json;
-        return <Node data={data} key={id} />;
-    }
-    return <Node data={0} key={i} />;
+function createGraphNode(nomObj) {
+    const { data, id, type } = nomObj;
+    return <Node data={data} key={id} />;
 }
 
 function HeartbeatStatus(props) { 
@@ -24,33 +21,68 @@ function HeartbeatStatus(props) {
         );
 }
 
-function App() {
-    
-    const heartbeat = JSON.parse(getModel().heartbeat);
+function JobBoard(props) {
+    return (
+        <React.Fragment>
+            <div>Job "{props.channel}":</div> 
+            <div>
+                {
+                    props.data.map(createGraphNode)
+                }
+            </div>
+            <br />
+        </React.Fragment>
+    );
+}
 
+function createJobBoard({channel, on, rb}) {
+    const noms = JSON.parse(rb).d.filter(nom => nom !== null);
+    return (
+        <JobBoard key={channel} data={noms} channel={channel} />
+    );
+}
+
+function App() {
+ 
     useEffect(function() {
         const interval = setInterval(function() {
-            if(getModel().stateId==gStates.RUNNING) {
-                handleGetData("?action=start");
-            }             
+            // use updateState (uses setObject) to avoid updateView in View
+            updateState({"clientHeartbeat": Date.now()});
+            setModel({
+                ...getModel(),
+                clientHeartbeatStatus: getState()["clientHeartbeat"]
+            });
+           // if(getModel().stateId === gStates.RUNNING) {
+           //     handleGetData("?action=start");
+           // }
         },
             1000
         );
 
         return () => clearInterval(interval);
-
+        
     }, []);
 
-    const appChannel = getModel().channels[0];
+    const state = enumToKeyState(getModel().stateId)
+    const clientHeartbeatStatus = getModel()["clientHeartbeatStatus"];
+    
+    const channels = JSON.parse(
+        getModel()["channels"]
+    ).d.filter(item => item !== null);
+    
+    const content = channels.map(createJobBoard);
+
+    console.log({channels});
+    console.log({content});
     return (
         <React.Fragment>
             <h1>Sparkline</h1>
-            <HeartbeatStatus { ...getModel().heartbeatCli } heartbeat={heartbeat}/>
+            <div>Client Heartbeat Status: {clientHeartbeatStatus}</div>
+            <div>Client FSM state is: {state} </div>
             <Form />
-            <StatusMessage />
+            <div>CLI status: </div>
             <br />
-            <Meter job={ appChannel } />
-            <br />
+            <div>{content.length ? content : null}</div>
         </React.Fragment>
     );
 }
