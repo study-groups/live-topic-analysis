@@ -1,28 +1,14 @@
-//CONTROLLERS
+/*
+Todo: consider pulling out FSM
 
-// Parent
-            /*
-               id: 001
-               type: data.job
-               parent: nectar
-               data: ?job=tweet&lang=en
+controller.js
 
-               *On the concept of an action type vs data type*
-               id: 005
-               type: action.job
-               parent: nectar
-               data: ?job=tweet&lang=en
+Controller related functions for:
 
-            */
-            // Child (aka data produced by the job)
-            /*
-                id: 1899
-                type: data.tweet
-                parent: 001
-                data: Kraft macaroni
-            */
-
-
+1. handling web based command line interface
+2. handling period heartbeat requests at server/json
+3. finite state machine functions
+*/
 
 // FSM
 function RUNNING_start(){
@@ -45,36 +31,10 @@ function IDLE_update(){
     return gStates.IDLE;    
 }
 
-function RUNNING_update(){
-    handleGetData("?action=update");
+function RUNNING_update(query){
+    handleGetData(query);
     return gStates.RUNNING;
 }
-
-
-/*
-function Fsm(){
-    states=["RUNNING", "IDLE"];
-    actions=["start", "stop"];
-    const fsm = new Map();
-
-    // with enumerated states/actions
-    fsm.set([states.RUNNING, actions.start],
-        () => states.RUNNING);
-
-    fsm.set("RUNNING_start", () => "RUNNING");
-
-    return fsm;
-}
-
-fsm = Fsm();
-// enumerations
-newStateId=fsm.get([stateId,actionId])(inputData)
-newStateId=fsm.get([states.RUNNING,actions.start])(inputData)
-
-// via string states
-newState=fsm.get(`${state}_${action}`)(inputData)
-newState=fsm.get("RUNNING_start")(inputData)
-*/
 
 function enumToKeyState(stateId){
     return enumToKey(gStates,stateId);
@@ -90,24 +50,19 @@ function findEnumFromStateEnumArray(val) {
 }
 
 function enumToKey(enumerator, val){
-    // Object.entries(gStates) => Array[Array[S, ENUM]]
-    // filter moves through the arrays
-    // v is the enum we want to find
-    // ([s, en]) deconstructs state and enum from the array
-    // v => ([s, en]) => en === v => Array[Array[S, ENUM]] 
-    // returns an array of arrays that match en === v
-    // Array[Array[S, ENUM]][0] => Array[S, ENUM]
-    // Array[S, ENUM][0] => S
-
-    // entries are [k,v], eg [string, id]
-    // [0][0] means unbox the first and only filtered object [0]
-    // which is an array of two elements, get the first,[0]
+/*
+v is the enum we want to find
+([s, en]) deconstructs state and enum from the array
+v => ([s, en]) => en === v => Array[Array[S, ENUM]] 
+returns an array of arrays that match en === v
+Array[Array[S, ENUM]][0] => Array[S, ENUM]
+Array[S, ENUM][0] => S
+*/
+    // entries are [key,val], eg [string, id]
+    // [0][0] means unbox the first (and only) filtered object, [0]
+    // which is an array of two elements, get the first via  [0]
     return Object.entries(enumerator).filter(([s, id]) => id === val)[0][0];
 }
-
-//function fsmCaller(state,action){
-     
-//}
 
 function isQueryString(input) {
     return /^\?([\w-]+(=[\w-]*)?(&[\w-]+(=[\w-]*)?)*)?$/.test(input);
@@ -121,20 +76,24 @@ function isAction(input) {
     return Object.keys(gActions).includes(input);
 }
 
+function toQuery(acc, value, index) {
+    // the first value is the action 
+    // so it's concatted without the ampersand
+    return index === 0 ? acc += value : acc += "&" + value;
+}
+
 function handleInput(cliInput) {
-    const acceptable = isAction(cliInput);
+    console.log({cliInput});
+    const cliTokens = cliInput.split(" ");
+    const acceptable = isAction(cliTokens[0]);
+    const query = cliTokens.reduce(toQuery, "?action=");
 
     // if acceptable action, turn the crank on client's FSM
     if (acceptable) { 
 
         // FSM state transition: STATE_action()
-        // pseudocode:
-        // const newState = "getModel().state"_"$cliInput"() 
-        //const state=gStates
-        //const newState = window[ getModel().state +"_stop"]();
         const stateStr = enumToKeyState(getModel().stateId);
-        //const state =Object.entries(getModel().state);
-        const newStateId = window[ stateStr+"_"+cliInput ]();
+        const newStateId = window[ stateStr+"_"+cliTokens[0] ](query);
         const newStateStr =enumToKeyState(newStateId);
         console.log(`New state ${enumToKeyState(newStateId)}`);
 
@@ -143,18 +102,19 @@ function handleInput(cliInput) {
         //  "status": "Acceptable local fsm."
 
         // ties REPL with FSM
-        const stateIdAfterUpdate = window[ newStateStr+"_update" ]();
+        //const stateIdAfterUpdate = window[ newStateStr+"_update" ]();
         setModel({
             ...getModel(),
-            stateId: stateIdAfterUpdate
+            stateId: newStateId
         });
         return;
     }
     
-    if (isQueryString(cliInput)) {
+    //if (isQueryString(cliInput)) {
         // it's already a query
-        return cliInput
-    }
+    //    console.log("It's a query: ", cliInput);
+    //    return cliInput;
+    //}
     /*
     // otherwise, turn it into a query
     const query = "?" + cliInput 
@@ -171,36 +131,39 @@ async function handleGetData(query) {
     try {
         const response = await fetch(DATA_SERVER_URL+query);
         const heartbeatPacket = await response.json();
+        console.log({heartbeatPacket});
+        const IDs = new Map();
 
-        // RingBuffers, et al
-        const prevChannels = getModel().channels; // JSON string
+        // channels: MeterList of RingBuffers, et al
+        // "Get (List) Component from Model."
+        const prevChannelsJson = getModel().channels; // JSON string
+
         // Parsing to Array[Object] and removing Nulls
-        const prevChannelData = JSON.parse(
-            prevChannels
-        ).d.filter(item => !isNull(item)); // Array[Object]
-        const channelsRb = new RingBuffer(new Array(20));
+        const prevChannels = JSON.parse(
+            prevChannelsJson
+        ).filter(item => !isNull(item)); // Array[Object]
 
-        //console.log({prevChannels});
-        //console.log({prevChannelData});
-        //console.log({channelsRb});
-
-        // Previous data and new
-        const refreshedData = [
-            ...prevChannelData, 
-            ...heartbeatPacket
-        ];
-
-        //console.log({refreshedData});
-
-        // Mapper
-        const channelMapper = new Map();
+        // Mapper acts as ListComponent
+        const channelMapper = new Map(prevChannels.map(function(channelObj) {
+            return [channelObj.channel, channelObj];
+        }));
+        channelMapper.forEach((value, key) => 
+            console.log("inside channelMapper: ", {value}, {key}))
         
-        refreshedData.forEach(function(nom) {
+        heartbeatPacket.forEach(function(nom) {
             const name = nom.channel;
             delete nom.channel;
-            const isChannel = channelMapper.has(name);
+            const channelExists = channelMapper.has(name);
+           
+            if (IDs.has(nom.id)) {
+                console.log("Duplicate ID: ", nom.id, " detected.")
+            }
 
-            if (!isChannel) {
+            IDs.set(nom.id, nom.data);
+
+            if (!channelExists) {
+                // Create NomComponent (JSX + prop persistence )
+                // Persist
                 const newRb = new RingBuffer(new Array(10));
                 newRb.push(nom);
                 channelMapper.set(name, {
@@ -210,68 +173,39 @@ async function handleGetData(query) {
                 });
             }
 
-            if (isChannel) {
-                const channel = channelMapper.get(name);
-                const prevRb = new RingBuffer(channel.rb);
-                prevRb.push(nom);
-                channelMapper.set(
+            if (channelExists) {
+                // returns ListElement
+                const channelListObj = channelMapper.get(name); 
+                const newRb = new RingBuffer(channelListObj.rb);
+                newRb.push(nom);
+                channelMapper.set( // channelMapper is ListComponent
                     name,
                     Object.assign(
-                        channel,
-                        {rb: prevRb.toJson()}
+                        channelListObj,
+                        {rb: newRb.toJson()} // replace old rb with new
                     )
                 );
             }
 
         });
 
+        // good, add comments
         const channels = Array.from(
-            channelMapper,
-            function([channelName, obj]) {
-                return Object.assign({channel: channelName}, obj);
+            channelMapper, // ListComponent
+            function([channelName, channelObj]) {
+                return Object.assign({channel: channelName}, channelObj);
             }
         );
-        console.log({channels})
 
-        channels.forEach((item) => channelsRb.push(item));
         const channelNames = channels.map(item => item.channel);
         console.log({channelNames})
+        setModel({
+            ...getModel(),
+            data: Array.from(IDs),
+            channels: JSON.stringify(channels),
+            channelNames 
+        });
         
-        setModel({...getModel(), channels: channelsRb.toJson()})
-
-        /*
-        // if it's not an error, push it to the stdout ringbuffer
-        // otherwise, push it to the error ringbuffer
-        json.type === "data.error" ? errors.push(json) : 
-        json.type === "data.heartbeat" ? heartbeat.push(json) :
-        rb.push(json);
-        
-        const app = {
-            ...getModel().channels[0], 
-            rb: rb.toJson() 
-        };
-
-        const channels = [app];
-
-        json.type !== "data.error" 
-            ? setModel({
-                ...getModel(),
-                errors: errors.toJson(),
-                heartbeat: heartbeat.toJson(),
-                channels,
-                status: "OK"
-            }) 
-
-            : setModel({
-                ...getModel(),
-                errors: errors.toJson(),
-                heartbeat: heartbeat.toJson(),
-                channels, 
-                status: errors.get(0).data
-            });
-
-        //setModel({errors: errors.toJson(), channels, status: "OK"});
-        */
     } catch(e) {
         const message = "An error has occurred: ";
         setModel({
