@@ -1,6 +1,7 @@
 // MODEL INIT
 // const Model = createModel({props: {}, state: {}})
 function createModel({props, state}) {
+    // ListComponent?
     let _props = props;
     let _state = state;
     const mapper = new Map();

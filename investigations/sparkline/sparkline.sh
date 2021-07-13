@@ -8,13 +8,13 @@ export HTML_FILE="$PWD/index.html"
 export JSON_FILE="$PWD/index.json"
 export JSON_DIR="$PWD"
 
-js_files=( 
+js_files=(
 ./RingBuffer.js
 ./app.js
 ./dependencies.js
 ./model.js
-./z-controller.js
-./z-view.js
+./controller.js
+./view.js
 )
 
 sparkline-build-mike () {
@@ -31,8 +31,9 @@ sparkline-build-mike () {
 }
 
 sparkline-start-mike() {
-  webtool-node-server  1235 ./index-m.html .
+  webtool-node-server  1235 ./index.html .
 }
+
 sparkline-build () {
   export HEADER="$(cat ./header.html)"
   export CDN="$(cat ./cdn.html)"
