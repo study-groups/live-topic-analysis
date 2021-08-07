@@ -1,0 +1,6 @@
+#!/bin/bash
+search="sparkline/nh" # all apps will have this signature in running cmd
+pids="$(ps -ef | pgrep -f  $search)"
+[ -z "$pids" ] && echo "Process $search is already stopped." && exit 1
+echo "Killing $pids: $search"
+kill $pids
