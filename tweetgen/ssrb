@@ -1,0 +1,16 @@
+buffer=()
+max_len=$1
+dir=$2
+count=$(ls -1 $dir | wc -l)
+echo Number of files: $count;
+echo Max number of files: $max_len;
+while true; do
+  if (( count > max_len )); then
+    numFilesToDelete=$(( count- max_len ))
+    echo "numFilesToDelete: $numFilesToDelete"
+  fi
+
+  read line # should read object
+  jq . > $dir/$(date +%s%N)
+  count=$(ls -1 $dir | wc -l)
+done

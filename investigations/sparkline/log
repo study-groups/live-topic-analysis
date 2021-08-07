@@ -1,0 +1,9 @@
+
+job is  before parse-query
+job is  after parse-query
+kvs is asdf=  after parse-query
+kv after for in kvs:
+asdf=
+job is  after eval
+job is random after eval
+job is random after eval

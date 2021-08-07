@@ -1,0 +1,11 @@
+#!/bin/bash
+cat <<EOF
+{
+    "id":$(date +%s%N),
+    "type": "data.heartbeat",
+    "parent": "FSM_ID",
+    "state": "FSM_STATE",
+    "action": "update",
+    "status": "status quo"
+}
+EOF

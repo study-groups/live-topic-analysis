@@ -1,0 +1,8 @@
+cat <<EOF
+{
+"id":$(date +%s%N),
+"type": "data.random",
+"data":$(shuf -i 1-30 -n 1)
+}
+EOF
+

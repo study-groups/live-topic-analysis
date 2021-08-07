@@ -2,6 +2,20 @@
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
 // VIEW
+// maybe for a more dynamic structure.
+// WIP
+// packet.forEach(data => Component(data.type)) just musing
+
+function createComponent(nom) {
+    // type
+    // props
+    // nomToProps
+    // parent
+    // children
+    // render/update
+    const type = nom.type.split(".")[1];
+}
+
 function Node(props) {
     return <span> {props.data} </span>;
 }
@@ -45,60 +59,187 @@ function createJobBoard({channel, on, rb}) {
     );
 }
 
+function objToComponent(obj) {
+    return window[obj.type];
+}
+
+/*
+function render(type) {
+// type: Cli
+    return () => getObject(
+        "view"
+    ).components
+    .filter(component => component.type === type)
+    .map(objToComponent);
+}
+*/
+
+// "The Barber" called by App useEffect().  Calls update on all
+// components (stateToProps) before render() functions grab
+// data from Model.componentName.props.
+//function appUpdate(){
+function stateToProps(){
+
+    const clientFsmStateStr = enumToStr(getState()["appFsm"]);
+    setProp("app","clientFsmState", clientFsmStateStr);
+    setProp("app","clientHeartbeat", getState()["clientHeartbeat"]);
+
+    // Alternative way of updating all components at a time
+/*    updateComponents({
+            app: { 
+                 ...getComponents()["app"],
+                 clientHeartbeat:getState()["clientHeartbeat"]
+            }
+        }
+    );
+*/
+}
+
+// The Barber's FSM: 
+// ACTION: toggle
+// STATES: dead, alive
+// dead_toggle => alive
+// alive_toggle => dead
+let alive=true;
 function App() {
- 
-    useEffect(function() {
-        const interval = setInterval(function() {
-            // use updateState (uses setObject) to avoid updateView in View
-            updateState({"clientHeartbeat": Date.now()});
-            setModel({
-                ...getModel(),
-                clientHeartbeatStatus: getState()["clientHeartbeat"]
-            });
-           // if(getModel().stateId === gStates.RUNNING) {
-           //     handleGetData("?action=start");
-           // }
-        },
-            1000
-        );
+    // Since we are passing [] as second paramenter to useEffect,
+    // it  is really "onMount" and returns "onUnmount".
+    //const alive = getProp("app", "alive");
+    useEffect( function() {
+            let interval=null;
+            interval = setTimeout(function heartbeat() { 
+                console.log("In heartbeat:",getState()["clientHeartbeat"]);
+                updateState({"clientHeartbeat": Date.now()});
+                stateToProps();
+                updateView();
+                alive ? setTimeout(heartbeat, 1000) : null ;
+            }, 1000); // initial delay 
 
-        return () => clearInterval(interval);
-        
-    }, []);
+           // called on "mount" and before render if 2nd arg permits
+           console.log("In useEffect after setInterval set");
 
-    const state = enumToKeyState(getModel().stateId)
-    const clientHeartbeatStatus = getModel()["clientHeartbeatStatus"];
-    
-    const channels = JSON.parse(
-        getModel()["channels"]
-    ).filter(item => item !== null);
-    
-    const content = channels.map(createJobBoard);
+           // called on "dismount" and after render if 2nd arg permits
+           return function(){
+               console.log("In useEffect post function.");
+               clearInterval(interval);
+           }
+       }, [alive]);  // adding this prevents calling each ReactDOM.render()
 
+    // props set i previous update pass called from heartbeat
+    const clientHeartbeatStr = getProp("app","clientHeartbeat");
+    const clientFsmStateStr = getProp("app","clientFsmState"); 
+
+    console.log("In App before return.");
+    const Ic = InputComponent();
     return (
         <React.Fragment>
-            <h1>Sparkline</h1>
-            <div>Client Heartbeat Status: {clientHeartbeatStatus}</div>
-            <div>Client FSM state is: {state} </div>
-            <Form />
-            <div>CLI status: </div>
-            <br />
-            <div>{content.length ? content : null}</div>
+            <ReactTitle title="Sparkline" />
+            <div>Client Heartbeat Status: {clientHeartbeatStr}</div>
+            <div>Client FSM state is: {clientFsmStateStr} </div>
+            <ReactCli />
+            <Example.render />
+            <Ic.React />
+            <div id="meterlist">
+            </div>
         </React.Fragment>
-    );
+    ); 
+            //<InputComponent.React />
 }
 
-function StatusMessage() {
-    if (getModel().status === "" ) {
-        return null;
-    }
-    if (getModel().status !== "OK") {
-        return <div style={{color: "red"}}>Error {getModel().status}</div>;
-    }
-    return <div style={{color: "green"}}>Request successful</div>;
+class ReactTitle extends React.Component {
+  render() {
+    return <h1>{this.props.title} </h1>;
+  }
 }
 
-function HeartbeatCli(props) {
+// Nom rendering: think when and where, not what.
+// what is obtained through 
+class ReactCli extends React.Component {
+  cli = Cli(handleInput);
+  render() {
+    return this.cli.renderReact();
+  }
+}
+
+customElements.define("component-cli", ReactCli);
+
+function cliUpdate(){
+    alert("cliUpdate called");
+    const statusStr = getState()["clientHeartbeat"];
+    updateComponents({"app":{heartbeatStatus:statusStr}});
+}
+
+const Example = {
+    render: () => React.createElement("div", null, "This is the example")
+};
+
+function InputComponent(){
+    const cliText="enter help to get started"
+    const html=`
+        <form
+            style="margin-bottom: 0"
+            onSubmit="handleSubmit"
+        >
+            <input 
+                type="text"
+                value="${cliText}"
+            />
+            <button>Submit</button>
+        <div style="font-size:.5rem">get status from component</div>
+        </form>`;
+ 
+    return {
+        status:"cli status on cli component object",
+       // update: () => null,
+       // render: function (){ return null;},
+        React: () => React.createElement(
+                "div", { dangerouslySetInnerHTML: {__html: html} })
+                //"div", null, "cli goes here")
+        };
+}
+
+
+
+// "when and where, not what
+function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
+    const cliForm = document.createElement("form");
+    const input = document.createElement("input");
+    const button = document.createElement("button");
+    const cliHtml=`<form>Cli:input<input/><button>enter</button></form>`
+ 
+    input.placeholder = "Enter command here";
+    button.textContent = "Submit";
+    
+    cliForm.id = id;
+    cliForm.addEventListener("submit", handleSubmit);
+    cliForm.append(input, button);
+
+    function handleSubmit(evt) {
+        evt.preventDefault(); 
+        update(input.value);
+        //alert(input.value);
+        input.value = "";
+    }
+
+    // parent is HTMLElement
+    // parent.append(cli);
+
+    // if parent is parentId and you need to look it up
+    //document.getElementById(parentId).append(cliForm);
+    return {
+        update:update,
+        render: function (){ return null;},
+        renderReact: function () { 
+            return React.createElement(
+                "div",
+                null,
+                "Cli component"
+            );
+        },
+        status:"cli status on cli component object"
+    }
+
+    /*
     const [cliText, setCliText] = useState("");
 
     function handleChange(e) {
@@ -134,44 +275,7 @@ function HeartbeatCli(props) {
             <button>Submit</button>
         </form>
     );
-}
-
-function Form() {
-    const [cliText, setCliText] = useState("");
-
-    function handleChange(e) {
-        setCliText(e.target.value);
-    }
-
-    function handleSubmit(e) {
-
-        e.preventDefault();
-
-        const query = handleInput(cliText);
-        
-        if (cliText.length === 0) {
-            alert("Please, enter your query.");
-            return;
-        }
-
-        handleGetData(query);
-
-        setCliText("");
-    }
-
-    return (
-        <form
-            style={{ marginBottom: 0 }}
-            onSubmit={handleSubmit}        
-        >
-            <input 
-                type="text"
-                value={cliText}
-                onChange={handleChange}
-            />
-            <button>Submit</button>
-        </form>
-    );
+    */
 }
 
 function Button({ job }) {

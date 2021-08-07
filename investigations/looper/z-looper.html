@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="./looper.css">
+</head>
+<p> Looper </p>
+<script crossorigin 
+  src="https://unpkg.com/react@16/umd/react.development.js">
+</script>
+<script crossorigin 
+  src="https://unpkg.com/react-dom@16/umd/react-dom.development.js">
+</script>
+<script crossorigin 
+  src="https://unpkg.com/babel-standalone@6.26.0/babel.js">
+</script>
+<script crossorigin
+  src="https://unpkg.com/d3@3.5.9/d3.js">
+</script>
+<div id="root"></div>
+<script type="text/babel">
+
+// DEBUG
+localStorage.clear();
+
+// MODEL
+// All UI state is under state
+if(localStorage.getItem("model") === null) {
+    var initModel = {
+        bpm: 120,
+        heartbeatIsOn: false,
+        streamIsOn: false
+    };
+    setObject("model",initModel);
+}
+
+function getObject(key){
+   return JSON.parse(localStorage.getItem(key));
+}
+
+function getModel(){
+   return getObject("model"); 
+}
+
+function setModel(obj){
+    setObject("model",obj);
+    updateView(obj);
+    return;
+}
+
+function setObject(key,obj){
+   // typical MVC would have a updateView call here.
+   localStorage.setItem(key,JSON.stringify(obj));
+   return obj;
+}
+//////// end of model /////////////////
+
+// Adding business logic to Promise chain
+function handleHeartbeat(m) {
+    console.log("handleHeartbeat",m);
+    m=getObject("model");
+    if(m.streamIsOn) {
+        fetch('http:/165.227.30.170/:2020/json')
+        .then(response => response.json())
+        .then( function(response) {
+                console.log("response: ", response);
+             })
+        .catch(function(error) {
+            //console.log("ERROR", error);
+            //setModel({heartbeatIsOn:false});
+            //console.log("ERROR TWOO", error);
+         });
+     }
+}
+
+// VIEW
+const {useState, useEffect, useReducer} = React;
+function updateView(obj){
+    ReactDOM.render(<App />, mountPoint);
+}
+
+
+// VIEW
+function Heartbeat(props){
+    let dispatch=props.dispatch;
+    let model=getModel();
+    console.log(props);
+    useEffect( function() { 
+        let model=getModel();
+        if(model.heartbeatIsOn) {
+            const intervalId = setInterval(
+                handleHeartbeat,
+                2000,// 1000ms =60bpm
+                getObject("model"));
+
+            return function cleanup() {
+                    clearInterval(intervalId);
+                     console.log("%c useEffect-cleanup-after-unload",
+                                 "color:brown",
+                                  getModel());
+                };
+        }
+    });
+    let status=model.heartbeatIsOn.toString();
+    return (
+         <div className="heartbeat">
+              <h1>Heartbeat: {status}</h1>
+              <div className="content">
+                 model: {JSON.stringify(model,null, 4)}
+                <br/> 
+                Init msg from props:{props.msg}
+                 <br/>
+                <button onClick= { ()=> dispatch( {
+                    model: model,
+                    type: "toggle-heartbeat",
+                    payload:{} 
+                            })
+                }>
+                     Turn heartbeat  {model.heartbeatIsOn ? 'Off' : 'On'}
+                </button>
+             </div>
+         </div>
+    ); 
+}
+
+// Naive controller, does not need to be in App scope.
+//  1) get model
+//  2) conduct business logic
+//  3) call setModel (triggers redraw)
+function handleToggleStream() {
+    let model=getModel();
+    let newModel={...model, streamIsOn: !model.streamIsOn};
+    model=setObject("model",newModel); // does not call updateView
+    //setModel(newModel); // calls updateView().
+    return model;
+}
+
+//create your forceUpdate hook
+function useForceUpdate(){
+    const [value, setValue] = useState(0); // integer state
+    // update the state to force render
+    return () => setValue(value => value + 1); 
+}
+
+function App() {
+    // This reducer does not get called when re-rendering after 
+    // handleToggleStream..
+    const [m1, dispatch ] = useReducer(reducer,getModel());
+    // Get the model from our interface, no hook up to React.
+    const [m2, setToggleStream] = useState(getModel());
+    //const model = { ...m1, ...m2};
+    const model = getModel(); 
+    return (
+        <React.Fragment >
+            <button  onClick={()=>setToggleStream(handleToggleStream())}>
+                Via handleToggleStream:<br/> 
+                Turn Stream  {model.streamIsOn ? 'Off' : 'On'}
+            </button>
+            <Heartbeat dispatch={dispatch} 
+                       msg={model.heartbeatIsOn.toString()} />
+            <button onClick= { ()=> dispatch( {
+                    model:model,
+                    type: "toggle-stream",
+                    payload:{} 
+                            })
+                }>
+                   Via dispatch:<br/>
+                   Turn Stream {model.streamIsOn ? 'Off' : 'On'}
+            </button>
+        </React.Fragment>
+    );
+}
+
+const mountPoint = document.getElementById("root");
+const gApp = ReactDOM.render(<App />, mountPoint);
+
+// CONTROLLER
+// state - UI
+// model - System
+// reducer can act on either or both
+// store - model + states for UI and FSMs
+// let model = store.model; 
+// let state = store.state; // could filter out UI only model params
+//function reducer(store, action) {
+
+function reducer(model, action) {
+  let newModel={};
+  switch (action.type) {
+    case 'increment':
+      return {count: model.bpm + 5};
+    case 'decrement':
+      return {count: model.bpm - 5};
+    case 'toggle-stream':
+      newModel = {...model, streamIsOn: !model.streamIsOn }; 
+      setObject("model",newModel);   // MODEL update
+      return newModel;
+    case 'toggle-heartbeat':
+      newModel = {...model, heartbeatIsOn: !model.heartbeatIsOn }; 
+      // We don't want the model to auto update via setModel(newModel)
+      // since this hook is part of the render cycle. 
+      // Use setObject() instead.
+      setObject("model",newModel);   // MODEL update
+      return newModel;
+    default:
+      throw new Error();
+  }
+}
+</script>
+</html>

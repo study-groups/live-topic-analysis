@@ -1,0 +1,153 @@
+#!/bin/bash
+# $1 = query string sent by form.
+# e.g. "job=bayes&min=20&max=30"
+source ./nectarlib.sh
+db="/home/admin/src/live-topic-analysis/investigations/sparkline/nectardb"
+log="/dev/stderr"
+
+random-update() {
+  #eval "$@"
+  parse-query "$1"
+  local id="$(date +%s%N)"
+  local data # needs to be on separate line for exit handling
+  # assigns stdout or stderr to variable data
+  data="$(shuf -i $min-$max -n 1 2>&1)"
+  # exit status from subshell will be captured
+  # can apply it when we're ready: echo "Exit status from subshell : $?"
+
+  local re='^[0-9]+$'
+  
+  [[ $data =~ $re ]] && \
+  # if data is a number, type is random
+  jq <<< '{"id": "'$id'", "parent": "ipsum", "channel": "?job='$job'&min='$min'&max='$max'", "type": "data.'$job'", "data": "'$data'"}' || \
+  
+  # if data is not a number, type is error
+  jq <<< '{"id": "'$id'", "parent": "ipsum", "type": "data.error", "data": "'$data'"}'
+}
+
+make-capitalized() {
+  eval "$@"
+  local id="$(date +%s%N)"
+  jq <<< '{"id": "'$id'", "type": "'$job'", "data": "'${value^^}'"}'
+}
+
+make-name() {
+  eval "$@"
+  local id="$(date +%s%N)"
+  jq <<< '{"id": "'$id'", "type": "'$job'", "data": "'${value^}'"}'
+}
+
+function parse-query(){
+    saveIFS=$IFS
+    IFS='=&'
+    parm=(${1:1}) # skips the question mark
+    IFS=$saveIFS
+    keyValArray="${parm[@]}"
+    kvs=();
+    for ((i = 0; i < ${#parm[@]}; i+=2)); do
+        #export "${parm[$i]}"="${parm[$i+1]}"
+        kvs+=("${parm[$i]}=${parm[$i+1]}")
+    done
+    eval "${kvs[@]}"
+    #make-${job} ${kvs[@]}
+    log "${kvs[@]}"
+}
+
+heartbeat-update-channels(){
+  channels=($db/channels/*);
+  for c in "${channels[@]}"; do
+    #"$c/update"  > "$c/fifo"
+    "$c/update" 
+  done
+
+  while c in channels; do
+    cat "$c/fifo" > "$db/fifo"
+  done
+
+  make-json-nom "data.channels" ${channels[@]}
+}
+
+make-json-nom(){
+cat<<EOF
+{
+"id": $(date +%s%N),
+"type": "$1",
+"data": "${@:2}"
+}
+EOF
+
+}
+
+# blocks on fifo write until fifo is opened
+#heartbeat-update-channels  > $db/fifo
+#cat $db/fifo | jq -s
+
+# turn on and off Nectar FSM
+
+state="$(cat $db/state)"  # one of IDLE, RUNNING
+action="stop"  # one of start, stop, update, create, delete
+
+# EXPECTATION
+# expecting this to be a query string from the server
+#action="$1"
+#echo "ACTION is $action"
+#while true; do
+#sleep 1;
+#done
+#echo ""
+
+# Nectar state transition rules
+business-logic(){
+    local qs=$1
+    local state="$(cat $db/state)"
+    log "In business-logic with state=$state"
+    log "In business-logic with qs=$qs"
+
+    #make-json "data.querystring" "$1" 
+    # ensures only json on stdout
+    cli_query="$(parse-query "$1" 2> errs)"
+    local ret=$?
+    [ $ret -ne 0 ] && \
+        (make-json-nom data.error "Error parsing querystring on server."; exit) 
+
+    [ $state == "RUNNING" ] && [ $action == "update" ] && RUNNING_update "$cli_query"
+    [ $state == "RUNNING" ] && [ $action == "stop" ] && RUNNING_stop
+    [ $state == "IDLE" ] && [ $action == "update" ] && IDLE_update 
+    [ $state == "IDLE" ] && [ $action == "stop" ] && IDLE_stop
+
+    local ret=$?
+    [ $ret -ne 0 ] && \
+      make-json-nom data.error "ERR business-logic error code: $ret"
+
+    echo $state > $db/state
+    log "Exiting business-logic with state=$state"
+    log "Exiting business-logic with action=$action"
+    log "Exiting business-logic with exit-status=$ret"
+}
+
+# EXPECTATION
+# State transition functions. (STATE,ACTION) -> STATE
+IDLE_update(){
+  echo "RUNNING" > $db/state
+  make-json-nom data.fsm "Nectar FSM state is RUNNING"
+}
+
+RUNNING_stop(){
+  echo "IDLE" > $db/state
+  make-json-nom "data.fsm" "Nectar FSM state is IDLE"
+}
+
+RUNNING_update(){
+  echo "RUNNING" > $db/state
+  make-random "job=random min=$min max=$max"
+}
+
+#if [ "$new_state" == "RUNNING" ]; then
+#./json-hook-heartbeat
+#fi
+
+#if [ "$new_state" == "IDLE" ]; then
+#  make-nom data.fsm "Nectar FSM state is IDLE" | jq . -s
+#fi
+
+business-logic $1

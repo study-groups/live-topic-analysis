@@ -1,0 +1,74 @@
+<html>
+<head>
+<style>
+body, button {
+  font-size:2rem;
+}
+article {
+  border:1px solid grey;
+  padding:2em;
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1> Vanilla MVC example</h1>
+<pre>
+MODEL: set(), get()
+VIEW: redrawn after model update.
+CONTROLLER: handleButtion(), all handle*() are controllers.
+</pre>
+</header>
+
+<article>
+THE VIEW
+</article>
+
+<footer>
+<button onclick="handleButton('isOn')">toggle</button>
+</footer>
+
+<script>
+
+// Controller (typically handleFunction())
+// Can: talk to Model
+// Can't talk to View
+// Deals with business logic
+// Similar to dispatch (via React's useReducer)
+function handleButton(key){
+  // React reducer would go here.
+  let val = localStorage.getItem(key); // always a string
+  let valBool = (val === 'true');
+  set(key,!valBool);
+}
+
+function handleInit(){
+  let key ="isOn";
+  let val = localStorage.getItem(key); // always a string
+  set(key,val);
+}
+
+// Model
+// No get is required as flow is one way to the view 
+// View can not request from model
+// View gets update from Model automatically
+// Only Controller can use get/set
+// localStorage only stores strings
+function set(key, val){
+  localStorage.setItem(key, val);
+  updateView(`${key}=${val}`); // hardcoded 'dispatch' function.
+}
+
+// View
+// Views cannot use model functions (set, get etc)
+// This function must be called from Model
+function updateView(msg){
+   b=document.querySelector('article'); 
+   b.innerHTML=`${msg}`;
+}
+
+handleInit();
+</script>
+</body>
+</html>

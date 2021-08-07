@@ -1,0 +1,43 @@
+#!/bin/bash
+
+job_id=${1:-"001"}
+min=${2:-"0"}
+max=${2:-"20"}
+delay=${4:-"0.5"}
+
+genA(){
+    cat <<EOF
+{
+    "id":$(date +%s%N),
+    "type": "data.random",
+    "parent": $job_id,
+    "data":$(shuf -i $min-$max -n 1)
+}
+EOF
+}
+
+genB(){
+    cat <<EOF
+{
+    "id":$(date +%s%N),
+    "type": "data.random",
+    "parent": 002,
+    "data":$(shuf -i 20-30 -n 1)
+}
+EOF
+}
+
+genAorB(){
+   # add comment about where 16384 comes from
+   # if $RANDOM is < 16384 then A, if not then B.
+   [ "$RANDOM" -lt 16384 ] && genA || genB
+}
+
+genAorB
+exit;
+
+# needs FSM for control
+while [ true ]; do
+    genAorB
+    sleep $delay
+done

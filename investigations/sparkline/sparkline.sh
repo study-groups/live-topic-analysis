@@ -8,6 +8,7 @@ export HTML_FILE="$PWD/index.html"
 export JSON_FILE="$PWD/index.json"
 export JSON_DIR="$PWD"
 
+# most recently working version
 js_files=(
 ./RingBuffer.js
 ./app.js
@@ -17,7 +18,17 @@ js_files=(
 ./view.js
 )
 
-sparkline-build-mike () {
+js_files_mike=(
+./RingBuffer.js
+./app.js
+./dependencies.js
+./model.js
+./controller.js
+./view.js
+)
+
+
+sparkline-build-mike-old () {
   export HEADER="$(cat ./header.html)"
   export CDN="$(cat ./cdn.html)"
   export JS="$(cat ./mike/dependencies.js \
@@ -30,8 +41,18 @@ sparkline-build-mike () {
   cat index.env | envsubst > index-m.html
 }
 
+sparkline-build-mike () {
+  export HEADER="$(cat ./header.html)"
+  export CDN="$(cat ./cdn.html)"
+  export JS="$(cat ${js_files_mike[@]} | envsubst)"
+  export FOOTER="$(cat ./footer.html)"
+  cat index.env | envsubst > index-m.html
+}
+
+
+
 sparkline-start-mike() {
-  webtool-node-server  1235 ./index.html .
+  webtool-node-server  1235 ./index-m.html .
 }
 
 sparkline-build () {
@@ -89,7 +110,7 @@ sparkline-generate() {
   done
 }
 
-function qik(){
+function qik() {
   d=$(date +%s)
   cp $1 ./$1.$d
   echo $2 > ./qik/log

@@ -1,81 +1,57 @@
 //CONTROLLERS
+
 function handleGetData() {
 
-    const container = document.getElementById("sparkline-container");
-
-    const options = {
-        //size: [100, 20],
-        size: [500, 200],
-        value: {
-            x: d => d.date,
-            y: d => d.value
-        }
-    };
-        // GET
-
-/*
-NOM D3 object:
-ID
-data.d3.tsd
-{
-  date:aaaa,
-  value:bbbb
-}
-*/
-    fetch(DATA_SERVER_URL) // NOM of type? 
+    fetch(DATA_SERVER_URL)
         .then(handleErrors)
-        // convert Buffer to JSON
         .then(response => response.json())
-        .then(function(jsonObject) {  // NOM (id, type, data)
-            const dataArray = getModel().data; // ring buffer array 
-            const rb = RingBuffer(dataArray);
-            rb.push(jsonObject);
-            //const rb2 = new RingBuffer(Array(10));
-            const rb2 = new RingBuffer([1,2,3,4,5,6,7,8,9,10]);
-            rb2.fromJson(getModel().data2);  // RingBuffer object
-            rb2.add(jsonObject);
+        .then(function(jsonObject) {
+            const rbJson = getModel()["app"].rb;
+            const rb = new RingBuffer(rbJson);
+            jsonObject.forEach(obj => rb.push(obj));
+            
+            const app = {
+                ...getModel().app, 
+                rb: rb.toJson() 
+            };
 
-            const now = Date.now();
-            const lineGraph = JSON.parse(
-                    rb.toJson()
-            ).d.map(function (value, i) {
-                return {
-                    date: new Date(now - (i * 24 * 60 * 60 * 1000)),
-                    value: value !== null ? value.data : 0
+            const newModel = Object.assign({}, getModel());
+            console.log(newModel)
+            delete newModel.app;
+            const keys = Object.keys(newModel);
+
+            keys.forEach(function(job) {
+                const rb = new RingBuffer(newModel[job].rb);
+                 
+                const newValues = jsonObject.filter(function(item){
+                    return job === item.parent;
+                });
+
+                rb.push(...newValues);
+                
+                newModel[job] = {
+                    ...newModel[job],
+                    rb: rb.toJson()
                 };
             });
-            // maybe use NOM data type as property in model. 
-            // i.e. data.random becomes Random[] in the model
-            // {random: Random[]}
 
-            // Channel: defined by a unique type
-            // A slot: is defined by a job ID whose data type 
-            //         is consistent with the channel holding the slot.
-
-
-            sparkline(container, lineGraph, options);
-
-            console.log("lineGraph: ", lineGraph);
-                            
             setModel({
                 // use previous state
                 ...getModel(),
-                // old data plus the new from response
-                data: [...JSON.parse(rb.toJson()).d],
-                data2: rb2.toJson(),
-                lineGraph: [...getModel().lineGraph, ...lineGraph] 
+                app,
+                ...newModel
             });
-            console.log(getModel());
         })
         .catch(error => console.log(error))
 }
 
-function handleClick() {
-    // use previous state
+function handleClick(job) {
     setModel({
         ...getModel(),
-        // set to opposite boolean value from previous state
-        isStreamOn: !getModel().isStreamOn
+        [job.name]: {
+            ...getModel()[job.name],
+            on: !getModel()[job.name].on
+        }
     });
 }
 

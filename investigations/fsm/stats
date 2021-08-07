@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# Initialize M1 = x1 and S1 = 0.
+# 
+# For subsequent x‘s, use the recurrence formulas
+# 
+# Mk = Mk-1+ (xk – Mk-1)/k
+# Sk = Sk-1 + (xk – Mk-1)*(xk – Mk).
+# 
+# For 2 ≤ k ≤ n, the kth estimate of the variance is s2 = Sk/(k – 1).
+# https://www.johndcook.com/blog/standard_deviation/
+
+# Mk = Mk-1+ (xk – Mk-1)/k
+# Sk = Sk-1 + (xk – Mk-1)*(xk – Mk).
+
+stats-var(){
+  xk=${1:-$xk}
+  var=${2:-$k}
+  k=${3:-$k}
+  mk1=${4:-$mk1}
+  sk1=${5:-$sk1}
+  total=${6:-$total}
+  ((k++))
+  mk=$(awk "BEGIN{mk=($mk1 + ($xk - $mk1) / $k); print mk}")
+  sk=$(awk "BEGIN{sk=($sk1+ ($xk - $mk1) *($xk - $mk) ); print sk}")
+  [ $k > 1 ] && var=$(awk "BEGIN{var=($sk/($k-1)); print var}")
+  total=$(awk "BEGIN{tot=$total+$xk; print tot}")
+  
+  #echo "$xk $var $k $mk $sk $total" 
+  echo "$xk $var $k $mk $sk $total"
+}
+id=""
+n=0
+m1=0
+sk1=0
+mk1=0
+xk=0
+sum=0
+avg=0
+std=0
+while true; do
+  [ -z "$id" ] && read id # read first time if empty
+  read type
+  read line 
+  while [ ! -z "$line" ]; do # while not empty
+    [ $n == 0 ] && \
+         var_state=($line 1 1 $line 0 0); # x,var, k, mk sk total
+    ((n++))
+    sum=$(expr $line + $sum )
+    avg=$(expr  $sum / $n )
+    var_state[0]=$line
+    var_state=($(stats-var ${var_state[@]}))
+    data="var_state:\n  ${var_state[@]}"
+    read line
+  done
+
+  echo id:$id
+  echo type:$type
+  printf "$data"
+  echo ""
+
+  # eat lines until next id
+  read id 
+  while [ -z "$id" ]; do # while empty
+    read id 
+  done
+
+done < ${1:-/dev/stdin}

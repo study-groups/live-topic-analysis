@@ -12,35 +12,35 @@ Controller related functions for:
 
 // FSM
 function RUNNING_start(){
-    return gStates.RUNNING;
+    return gFsmStates.RUNNING;
 }
 
 function RUNNING_stop(){
-    return gStates.IDLE;    
+    return gFsmStates.IDLE;    
 }
 
 function IDLE_start(){
-    return gStates.RUNNING;    
+    return gFsmStates.RUNNING;    
 }
 
 function IDLE_stop(){
-    return gStates.IDLE;    
+    return gFsmStates.IDLE;    
 }
 
 function IDLE_update(){
-    return gStates.IDLE;    
+    return gFsmStates.IDLE;    
 }
 
 function RUNNING_update(query){
     handleGetData(query);
-    return gStates.RUNNING;
+    return gFsmStates.RUNNING;
 }
 
-function enumToKeyState(stateId){
-    return enumToKey(gStates,stateId);
+function enumToStr(stateId){
+    return enumToKey(gFsmStates, stateId);
 }
 function enumToKeyAction(actionId){
-    return enumToKey(gActions,actionId);
+    return enumToKey(gFsmActions,actionId);
 }
 
 function findEnumFromStateEnumArray(val) {
@@ -73,7 +73,7 @@ function isNull(input) {
 }
 
 function isAction(input) {
-    return Object.keys(gActions).includes(input);
+    return Object.keys(gFsmActions).includes(input);
 }
 
 function toQuery(acc, value, index) {

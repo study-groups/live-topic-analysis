@@ -1,0 +1,23 @@
+#!/bin/bash
+id=""
+while true; do
+  [ -z $id ] && read id # read first time if empty
+
+  read type
+  read line
+  while [ ! -z $line ]; do # while not empty
+    data+="$line\n"
+  done
+
+  echo id:$id
+  echo type:$type
+  echo data:$data
+  echo ""
+
+  # eat lines until next id
+  read id 
+  while [ ! -z $id ]; do # while not empty
+    read id 
+  done
+
+done

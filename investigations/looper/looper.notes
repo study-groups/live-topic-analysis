@@ -1,0 +1,98 @@
+React thinking points:
+
+The Effect hook tells React your component needs to do something after render. 
+The Effect hook lets you perform side effects in function components.
+The second parameter tells React what to monitor for change.
+
+Hook Do's
+Call them at the top level in the body of a function component.
+Call them at the top level in the body of a custom Hook.
+
+Hook Dont's
+Do not call Hooks in class components.
+Do not call in event handlers.
+Do not call Hooks inside functions passed to useMemo, useReducer, or useEffect.
+
+Thoughts from the Redux Book, Part 1, Chapter 6:
+
+1. We use a binding library, such as react-redux to get state 
+from our store into our components.
+
+2. We use React's context API to give components access 
+to the store we create. 
+
+3. The <Provider /> component is part of the react-redux library 
+and simply puts the store into the context which makes it 
+available to its child components.
+
+4. connect() is how we can get state and dispatch actions from 
+the store to our components.
+
+5. We write a select() function that takes the application state 
+and returns an object of props for the component.
+
+6. The object that is returned by your select function should 
+only include what the component needs to know. 
+
+7. We can use the second argument to select() to pass an object 
+of action creators we want to bind to the store and turn 
+into props the component can call.
+ 
+Chapter 12:
+
+Stores are what I call system state
+<Provider> puts the store into context
+connect() gets stuff from the store
+Somewhere, somehow, in some file, you'll create your store. Then..
+
+Example connecting system store to React state.
+import { Provider } from 'react-redux'
+import RootComponent from './my/root/component'
+import getStore from './a/function/that/returns/our/store'
+
+render(
+  <Provider store={getStore()}>
+    <RootComponent />
+  </Provider>,
+  document.getElementById('app')
+)
+
+// select is aka mapStateToProps
+const select = appState => {
+  return {
+    results: appState.results,
+    query: appState.query
+  }
+}
+
+const ourWrapperFunction = connect(select) 
+
+References:
+https://reactjs.org/docs/state-and-lifecycle.html
+https://productoptimist.com/start-using-react-hooks-a-clock-timer-example/
+https://reactjs.org/docs/hooks-effect.html
+https://read.reduxbook.com/markdown/part1/06-binding-state-to-views.html
+
+
+// Custom Hook via https://usehooks.com/useToggle
+// Returns the tuple [state, dispatch]
+// Normally with useReducer you pass a value to dispatch 
+// to indicate what action to take on the state, but in 
+// this case there's only one action.
+// function useToggle(initialValue = false){
+//     return useReducer((state) => !state, initialValue);
+// }
+
+// Accepts a reducer of type (state, action) => newState,
+// and returns the current state paired with a dispatch method.
+
+// CONTROLLER                                                                   
+// Reducer is a controller with business logic that is called                   
+// from a React View. We need Redux-like architecture to call                   
+// the controller from outside of React.                                        
+                                                                                
+// A CONTROLLER modifies the MODEL with business logic.                         
+// Our Model API is getObject() and setObject() w/ localStorage persistence.    
+// After Biz logic updates Model, view is informed by returning                 
+// component specific object that will be used in the component,                
+// perhaps further passed to children as as props. 

@@ -1,5 +1,6 @@
 <html>
-<!-- <p>
+<!--
+<p>
 Example of Sparkline component.
 <pre>
 "An App subscribes to a JobBoard on the server."
@@ -9,10 +10,12 @@ Example of Sparkline component.
  fills into a FIFO. Each ss-job has its own
  FIFO located in nectar/jobs/jobId/fifo."
 </pre>
-</p> -->
+</p>
+-->
 <body>
 <div id="root"></div>
 <div id="sparkline-container"></div>
+<div id="meter"></div>
 <script crossorigin 
   src="https://unpkg.com/react@16/umd/react.development.js">
 </script>
@@ -119,29 +122,63 @@ function RingBuffer(
         toJson
     };
 }
+const gFsmActions = Object.freeze({"start": 1, "stop": 2, "update":3 });
+const gFsmStates = Object.freeze({"RUNNING": 1, "IDLE": 2});
+
 // model assumes this function exists and will call it after setModel()
 function updateView() {
-    ReactDOM.render(<App />, document.getElementById("root"));
+    ReactDOM.render(<App  />, document.getElementById("root"));
 }
+
+/*
+function updateView() {
+    ReactDOM.render(<App  alive={ getProp("app","alive") } />, document.getElementById("root"));
+}
+*/
 
 window.addEventListener("load", function(event) {
     localStorage.clear();
     // if local storage does NOT contain a key named "model"
     // create the key of "model" and pass its initial state
-    if (localStorage.getItem("model") === null) {
-        setObject("model",
-            {
-                channels: [
-                    {
-                        channel: "app",
-                        on: false,
-                        id: "app",
-                        rb: new RingBuffer(Array(20)).toJson()
-                    }
-                ]
+    if (localStorage.getItem("components") === null) {
+       //setComponents
+        
+
+        // Concepts that may need state (and not auto update
+        // view via changes to model): 
+        // MVC, Heartbeat, FSM, Repl
+
+        // These are single source of truth that the 
+        // view should not know about. Instead, the controller
+        // can choose to look at state to set the model.
+        // setState
+        setState({
+               "clientHeartbeat": "clientHeartbeat not set",
+               "serverHeartbeat": "May not need this.",
+               "serverFsm": "Dont know server state.",
+               "appFsm": gFsmStates.IDLE,
+               "mvc": "mvc does not use state",
+               "repl": "repl does not use state"
             }
         );
-        console.log("localStorage Model initialized.");
+
+        // initial "stateToProps"
+        setComponents({
+            app: { 
+                   status: enumToStr(getState()["appFsm"]),
+                   fsmStatus: "Client FSM status"
+                 },
+            cli: { 
+                   status: "cli status goes here"
+                 },
+
+            meterList: {
+                   selected: "channelIdString"
+            }
+
+        });
+
+        console.log("View and State initialized.");
     }
     updateView();
 });
@@ -155,6 +192,158 @@ const {
     scaleLinear 
 } = d3;
 // MODEL INIT
+/*
+const model = Model({
+    components: { 
+        app: propsForApp,
+        cli: propsForCli
+    }, 
+    state: {}
+});
+*/
+
+function Model({components, state}) {
+    
+    let _components = components;
+    let _state = state;
+
+    const mapper = new Map();
+    setComponents(_components);
+    setState(_state);
+
+    // action creator returns state to prop?
+    return {
+        getProps,
+        setProps,
+        updateState,
+    };
+
+/*
+    function mapStateToProp(stateVar, viewProp, fn) {
+        function dispatchAction(fn) {
+            const hydrateStateValue = () => getState()[stateVar] 
+            return fn 
+                ? () => fn(hydrateStateValue()) 
+                : () => hydrateStateValue();
+        }
+        // A Map relationship of map.set(stateVar, viewProp)
+        // A Map relationship of otherMap.set(viewProp, dispatchAction)
+        // const chosenViewProp = map.get(stateVar)
+        // const fn = otherMap.get(chosenViewProp)
+        mapper.set(viewProp, dispatchAction);
+        // mapper.set(stateVar, dispatchAction);
+        const stateToProp = mapper.get(viewProp); 
+        setProps({
+            ...getProps(),
+            [viewProp]: stateToProp()
+        });
+    }
+
+    function dispatch(action) {
+        mapper.get(action)();
+    }
+*/
+    function _getObject(key) {
+        // gets value from local storage by key
+        // parses string value to object
+        // returns object  
+        return JSON.parse(localStorage.getItem(key));
+    }
+
+    function _setObject(key, obj) {
+        // stringifies object and assigns to key in local storage
+        // returns object assignment
+        localStorage.setItem(key, JSON.stringify(obj))
+        return obj;
+    }
+
+    // Returns an object with key/val for mapping (not itterating)
+    // key = unique name of an instantiated component
+    //components={c1:{p1:v1,p2:v2},c2:{p3:v3,p4:v4}}
+
+
+    function getComponents() {
+        return _getObject("components");
+    }
+
+    function getComponent(name) {
+        return getComponents()[name];
+    }
+
+    function setComponents(obj) {
+        setObject("components", obj);
+    }
+
+    function updateComponents(obj) {
+        setComponents({
+            ...getComponents(),   
+            ...obj 
+        });
+    }
+
+    function getProps(nameOfComponent) {
+        return getComponents()[nameOfComponent];
+    }
+
+    function setProps(nameOfComponent, obj) {
+        setComponents({...getComponents, [nameOfComponent]: obj});
+    }
+
+    function getState() {
+        return _getObject("state");
+    }
+
+    function setState(obj) {
+        _setObject("state", obj);
+    }
+
+    function updateState(obj){
+        setState({
+            ...getState(),
+            ...obj
+        })
+    }
+}
+
+// Returns an object with key/val for mapping (not itterating)
+// key = unique name of an instantiated component
+function getComponents() {
+    return getObject("components");
+}
+
+function getComponent(name) {
+    return getComponents()[name];
+}
+
+function setComponents(obj) {
+    setObject("components", obj);
+}
+
+//components={c1:{p1:v1,p2:v2},c2:{p3:v3,p4:v4}}
+
+function updateComponents(obj) {
+// {app: {status: "", } }
+    setComponents({
+        ...getComponents(), // {"app": "old", "cli": "code"}  
+        ...obj // {"app": "new"}
+    });
+}
+
+function getProp(comp,prop){
+    return getComponent(comp)[prop];
+}
+
+function setProp(compName,prop,val){
+    let props = getComponent(compName);
+    props[prop] = val;
+    let obj = {};
+    obj[compName]={ ...props }; // obj= {"app": {"prop1":val1,"prop2": val2} }
+
+    //setComponents( ...getComponents(), { ``: props } );
+    // I believe this is updateComponents
+    updateComponents( obj );
+}
+
 function getObject(key) {
     // gets value from local storage by key
     // parses string value to object
@@ -177,77 +366,239 @@ function setModel(obj) {
     setObject("model", obj);
     updateView(); // re-renders Virtual DOM tree
 }
-//CONTROLLERS
 
-// Parent
-            /*
-               id: 001
-               type: data.job
-               parent: nectar
-               data: ?job=tweet&lang=en
-
-               *On the concept of an action type vs data type*
-               id: 005
-               type: action.job
-               parent: nectar
-               data: ?job=tweet&lang=en
-
-            */
-            // Child (aka data produced by the job)
-            /*
-                id: 1899
-                type: data.tweet
-                parent: 001
-                data: Kraft macaroni
-            */
-
-function handleGetData() {
-
-    fetch(DATA_SERVER_URL)
-        .then(handleErrors)
-        .then(response => response.json())
-        .then(function(jsonArray) {
-            console.log("original json array from server: ", jsonArray);
-            // app is always in index 0
-            const appRbJson = getModel().channels[0].rb;
-            const rb = new RingBuffer(appRbJson);
-            jsonArray.forEach(obj => rb.push(obj));
-            
-            const app = {
-                ...getModel().channels[0], 
-                rb: rb.toJson() 
-            };
-
-            const channelMapper = new Map();
-
-            jsonArray.forEach(function(nom) {
-                channelMapper.set(nom.channel, {
-                    channel: nom.channel,                                   
-                    id: nom.id,
-                    on: false,                                                  
-                    rb: new RingBuffer(Array(10)).toJson()
-                });
-                const channel = channelMapper.get(nom.channel);
-                const rb = new RingBuffer(channel.rb);
-                rb.push(nom);
-                channelMapper.set(nom.channel, {...channel, rb: rb.toJson()})
-            });
-
-            const channels = Array.from(
-                channelMapper,
-                ([channelName, obj]) => ({ channel: channelName, ...obj})
-            );
-
-            // app is always at index 0
-            const allChannels = [app, ...channels];
-
-            setModel({channels: allChannels});
-
-        })
-        .catch(error => console.log(error))
+function getState() {
+    return getObject("state");
 }
 
+function setState(obj) {
+    setObject("state", obj);
+}
 
+function updateState(obj){
+    setState({
+        ...getState(),
+        ...obj
+    })
+}
+/*
+Todo: consider pulling out FSM
+
+controller.js
+
+Controller related functions for:
+
+1. handling web based command line interface
+2. handling period heartbeat requests at server/json
+3. finite state machine functions
+*/
+
+// FSM
+function RUNNING_start(){
+    return gFsmStates.RUNNING;
+}
+
+function RUNNING_stop(){
+    return gFsmStates.IDLE;    
+}
+
+function IDLE_start(){
+    return gFsmStates.RUNNING;    
+}
+
+function IDLE_stop(){
+    return gFsmStates.IDLE;    
+}
+
+function IDLE_update(){
+    return gFsmStates.IDLE;    
+}
+
+function RUNNING_update(query){
+    handleGetData(query);
+    return gFsmStates.RUNNING;
+}
+
+function enumToStr(stateId){
+    return enumToKey(gFsmStates, stateId);
+}
+function enumToKeyAction(actionId){
+    return enumToKey(gFsmActions,actionId);
+}
+
+function findEnumFromStateEnumArray(val) {
+    return function ([s, id]) {
+        return id === val;
+    }
+}
+
+function enumToKey(enumerator, val){
+/*
+v is the enum we want to find
+([s, en]) deconstructs state and enum from the array
+v => ([s, en]) => en === v => Array[Array[S, ENUM]] 
+returns an array of arrays that match en === v
+Array[Array[S, ENUM]][0] => Array[S, ENUM]
+Array[S, ENUM][0] => S
+*/
+    // entries are [key,val], eg [string, id]
+    // [0][0] means unbox the first (and only) filtered object, [0]
+    // which is an array of two elements, get the first via  [0]
+    return Object.entries(enumerator).filter(([s, id]) => id === val)[0][0];
+}
+
+function isQueryString(input) {
+    return /^\?([\w-]+(=[\w-]*)?(&[\w-]+(=[\w-]*)?)*)?$/.test(input);
+}
+
+function isNull(input) {
+    return input === null;
+}
+
+function isAction(input) {
+    return Object.keys(gFsmActions).includes(input);
+}
+
+function toQuery(acc, value, index) {
+    // the first value is the action 
+    // so it's concatted without the ampersand
+    return index === 0 ? acc += value : acc += "&" + value;
+}
+
+function handleInput(cliInput) {
+    console.log({cliInput});
+    const cliTokens = cliInput.split(" ");
+    const acceptable = isAction(cliTokens[0]);
+    const query = cliTokens.reduce(toQuery, "?action=");
+
+    // if acceptable action, turn the crank on client's FSM
+    if (acceptable) { 
+
+        // FSM state transition: STATE_action()
+        const stateStr = enumToKeyState(getModel().stateId);
+        const newStateId = window[ stateStr+"_"+cliTokens[0] ](query);
+        const newStateStr =enumToKeyState(newStateId);
+        console.log(`New state ${enumToKeyState(newStateId)}`);
+
+
+        // if RUNNING, fetch, if IDLE, dont. => occurring in useEffect
+        //  "status": "Acceptable local fsm."
+
+        // ties REPL with FSM
+        //const stateIdAfterUpdate = window[ newStateStr+"_update" ]();
+        setModel({
+            ...getModel(),
+            stateId: newStateId
+        });
+        return;
+    }
+    
+    //if (isQueryString(cliInput)) {
+        // it's already a query
+    //    console.log("It's a query: ", cliInput);
+    //    return cliInput;
+    //}
+    /*
+    // otherwise, turn it into a query
+    const query = "?" + cliInput 
+            .replace(/ /g, "").replace(/,/g, "&");
+    return query;
+    */
+   
+    // Otherwise, it's not a command
+    setModel({...getModel(), status: "Command not found"});
+}
+
+async function handleGetData(query) {
+
+    try {
+        const response = await fetch(DATA_SERVER_URL+query);
+        const heartbeatPacket = await response.json();
+        console.log({heartbeatPacket});
+        const IDs = new Map();
+
+        // channels: MeterList of RingBuffers, et al
+        // "Get (List) Component from Model."
+        const prevChannelsJson = getModel().channels; // JSON string
+
+        // Parsing to Array[Object] and removing Nulls
+        const prevChannels = JSON.parse(
+            prevChannelsJson
+        ).filter(item => !isNull(item)); // Array[Object]
+
+        // Mapper acts as ListComponent
+        const channelMapper = new Map(prevChannels.map(function(channelObj) {
+            return [channelObj.channel, channelObj];
+        }));
+        channelMapper.forEach((value, key) => 
+            console.log("inside channelMapper: ", {value}, {key}))
+        
+        heartbeatPacket.forEach(function(nom) {
+            const name = nom.channel;
+            delete nom.channel;
+            const channelExists = channelMapper.has(name);
+           
+            if (IDs.has(nom.id)) {
+                console.log("Duplicate ID: ", nom.id, " detected.")
+            }
+
+            IDs.set(nom.id, nom.data);
+
+            if (!channelExists) {
+                // Create NomComponent (JSX + prop persistence )
+                // Persist
+                const newRb = new RingBuffer(new Array(10));
+                newRb.push(nom);
+                channelMapper.set(name, {
+                    channel: name,
+                    on: false,
+                    rb: newRb.toJson()
+                });
+            }
+
+            if (channelExists) {
+                // returns ListElement
+                const channelListObj = channelMapper.get(name); 
+                const newRb = new RingBuffer(channelListObj.rb);
+                newRb.push(nom);
+                channelMapper.set( // channelMapper is ListComponent
+                    name,
+                    Object.assign(
+                        channelListObj,
+                        {rb: newRb.toJson()} // replace old rb with new
+                    )
+                );
+            }
+
+        });
+
+        // good, add comments
+        const channels = Array.from(
+            channelMapper, // ListComponent
+            function([channelName, channelObj]) {
+                return Object.assign({channel: channelName}, channelObj);
+            }
+        );
+
+        const channelNames = channels.map(item => item.channel);
+        console.log({channelNames})
+        setModel({
+            ...getModel(),
+            data: Array.from(IDs),
+            channels: JSON.stringify(channels),
+            channelNames 
+        });
+        
+    } catch(e) {
+        const message = "An error has occurred: ";
+        setModel({
+            ...getModel(),
+            status:e.message
+        });
+        //alert(e);
+        throw new Error(message + e.message);
+    }
+}
 
 function handleClick(job) {
     const refreshedChannels = [
@@ -256,14 +607,6 @@ function handleClick(job) {
     const refreshChannelHere = refreshedChannels.findIndex(
         item => item.channel === job.channel   
     );
-    console.log("job: ", job);
-    console.log("refresh channel index: ", refreshChannelHere);
-    console.log(
-        "channel to refresh: ",
-        refreshedChannels[
-            refreshChannelHere
-        ]
-    );
     
     refreshedChannels[refreshChannelHere] = {
         channel: job.channel,
@@ -271,17 +614,9 @@ function handleClick(job) {
         rb: job.rb,
         on: !job.on
     };
-    console.log(
-        "channel refreshed: ",
-        refreshedChannels[
-            refreshChannelHere
-        ]
-    );
     setModel({
         channels: refreshedChannels
     });
-    console.log(getModel())
-    
 }
 
 function handleErrors(response) {
@@ -291,52 +626,248 @@ function handleErrors(response) {
     }
     return response;
 }
+
+const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
+
 // VIEW
+// maybe for a more dynamic structure.
+// WIP
+// packet.forEach(data => Component(data.type)) just musing
+
+function createComponent(nom) {
+    // type
+    // props
+    // nomToProps
+    // parent
+    // children
+    // render/update
+    const type = nom.type.split(".")[1];
+}
+
 function Node(props) {
     return <span> {props.data} </span>;
 }
 
-function createGraphNode(json, i) {
-    if (json) {
-        const { data, id, type } = json;
-        return <Node data={data} key={id} />;
-    }
-    return <Node data={0} key={i} />;
+function createGraphNode(nomObj) {
+    const { data, id, type } = nomObj;
+    return <Node data={data} key={id} />;
 }
 
-function App() {
-    // App is always at index 0 and others are added thereafter.
-    useEffect(function() {
-        const interval = setInterval(function() {
-            if(getModel().channels[0].on) {
-                handleGetData();
-            }             
-        },
-            1000
+function HeartbeatStatus(props) { 
+    // if first byte null, return null (react-ism) instead of Element
+    return !props.heartbeat.d[0] 
+        ? null 
+        : (
+            <span style={
+                {color: "gray"}
+            }>
+                {props.heartbeat.d[0].data}
+            </span>
         );
+}
 
-        return () => clearInterval(interval);
-
-    }, []);
-
-    const appChannel = getModel().channels[0];
-    const otherChannels = () => getModel().channels
-        .slice(1) // skip index 0 where app is
-        .map(createMeterButtonPair); // map data to other meters and buttons
-
+function JobBoard(props) {
     return (
         <React.Fragment>
-            <h1>Sparkline</h1>
-            <Meter job={ appChannel } />
-            <Button job={ appChannel } />
+            <div>Job "{props.channel}":</div> 
+            <div>
+                {
+                    props.data.map(createGraphNode)
+                }
+            </div>
             <br />
-            {otherChannels()}
-            <Form />
         </React.Fragment>
     );
 }
 
-function Form() {
+function createJobBoard({channel, on, rb}) {
+    const noms = JSON.parse(rb).d.filter(nom => nom !== null);
+    return (
+        <JobBoard key={channel} data={noms} channel={channel} />
+    );
+}
+
+function objToComponent(obj) {
+    return window[obj.type];
+}
+
+/*
+function render(type) {
+// type: Cli
+    return () => getObject(
+        "view"
+    ).components
+    .filter(component => component.type === type)
+    .map(objToComponent);
+}
+*/
+
+// "The Barber" called by App useEffect().  Calls update on all
+// components (stateToProps) before render() functions grab
+// data from Model.componentName.props.
+//function appUpdate(){
+function stateToProps(){
+
+    const clientFsmStateStr = enumToStr(getState()["appFsm"]);
+    setProp("app","clientFsmState", clientFsmStateStr);
+    setProp("app","clientHeartbeat", getState()["clientHeartbeat"]);
+
+    // Alternative way of updating all components at a time
+/*    updateComponents({
+            app: { 
+                 ...getComponents()["app"],
+                 clientHeartbeat:getState()["clientHeartbeat"]
+            }
+        }
+    );
+*/
+}
+
+// The Barber's FSM: 
+// ACTION: toggle
+// STATES: dead, alive
+// dead_toggle => alive
+// alive_toggle => dead
+let alive=true;
+function App() {
+    // Since we are passing [] as second paramenter to useEffect,
+    // it  is really "onMount" and returns "onUnmount".
+    //const alive = getProp("app", "alive");
+    useEffect( function() {
+            let interval=null;
+            interval = setTimeout(function heartbeat() { 
+                console.log("In heartbeat:",getState()["clientHeartbeat"]);
+                updateState({"clientHeartbeat": Date.now()});
+                stateToProps();
+                updateView();
+                alive ? setTimeout(heartbeat, 1000) : null ;
+            }, 1000); // initial delay 
+
+           // called on "mount" and before render if 2nd arg permits
+           console.log("In useEffect after setInterval set");
+
+           // called on "dismount" and after render if 2nd arg permits
+           return function(){
+               console.log("In useEffect post function.");
+               clearInterval(interval);
+           }
+       }, [alive]);  // adding this prevents calling each ReactDOM.render()
+
+    // props set i previous update pass called from heartbeat
+    const clientHeartbeatStr = getProp("app","clientHeartbeat");
+    const clientFsmStateStr = getProp("app","clientFsmState"); 
+
+    console.log("In App before return.");
+    const Ic = InputComponent();
+    return (
+        <React.Fragment>
+            <ReactTitle title="Sparkline" />
+            <div>Client Heartbeat Status: {clientHeartbeatStr}</div>
+            <div>Client FSM state is: {clientFsmStateStr} </div>
+            <ReactCli />
+            <Example.render />
+            <Ic.React />
+            <div id="meterlist">
+            </div>
+        </React.Fragment>
+    ); 
+            //<InputComponent.React />
+}
+
+class ReactTitle extends React.Component {
+  render() {
+    return <h1>{this.props.title} </h1>;
+  }
+}
+
+// Nom rendering: think when and where, not what.
+// what is obtained through 
+class ReactCli extends React.Component {
+  cli = Cli(handleInput);
+  render() {
+    return this.cli.renderReact();
+  }
+}
+
+customElements.define("component-cli", ReactCli);
+
+function cliUpdate(){
+    alert("cliUpdate called");
+    const statusStr = getState()["clientHeartbeat"];
+    updateComponents({"app":{heartbeatStatus:statusStr}});
+}
+
+const Example = {
+    render: () => React.createElement("div", null, "This is the example")
+};
+
+function InputComponent(){
+    const cliText="enter help to get started"
+    const html=`
+        <form
+            style="margin-bottom: 0"
+            onSubmit="handleSubmit"
+        >
+            <input 
+                type="text"
+                value=""
+            />
+            <button>Submit</button>
+        <div style="font-size:.5rem">get status from component</div>
+        </form>`;
+ 
+    return {
+        status:"cli status on cli component object",
+       // update: () => null,
+       // render: function (){ return null;},
+        React: () => React.createElement(
+                "div", { dangerouslySetInnerHTML: {__html: html} })
+                //"div", null, "cli goes here")
+        };
+}
+
+
+
+// "when and where, not what
+function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
+    const cliForm = document.createElement("form");
+    const input = document.createElement("input");
+    const button = document.createElement("button");
+    const cliHtml=`<form>Cli:input<input/><button>enter</button></form>`
+ 
+    input.placeholder = "Enter command here";
+    button.textContent = "Submit";
+    
+    cliForm.id = id;
+    cliForm.addEventListener("submit", handleSubmit);
+    cliForm.append(input, button);
+
+    function handleSubmit(evt) {
+        evt.preventDefault(); 
+        update(input.value);
+        //alert(input.value);
+        input.value = "";
+    }
+
+    // parent is HTMLElement
+    // parent.append(cli);
+
+    // if parent is parentId and you need to look it up
+    //document.getElementById(parentId).append(cliForm);
+    return {
+        update:update,
+        render: function (){ return null;},
+        renderReact: function () { 
+            return React.createElement(
+                "div",
+                null,
+                "Cli component"
+            );
+        },
+        status:"cli status on cli component object"
+    }
+
+    /*
     const [cliText, setCliText] = useState("");
 
     function handleChange(e) {
@@ -344,13 +875,24 @@ function Form() {
     }
 
     function handleSubmit(e) {
+
         e.preventDefault();
-        alert("send command: " + cliText);
+
+        const query = handleInput(cliText);
+        
+        if (cliText.length === 0) {
+            alert("Please, enter your query.");
+            return;
+        }
+
+        handleGetData(query);
+
         setCliText("");
     }
 
     return (
         <form
+            style={{ marginBottom: 0 }}
             onSubmit={handleSubmit}        
         >
             <input 
@@ -361,6 +903,7 @@ function Form() {
             <button>Submit</button>
         </form>
     );
+    */
 }
 
 function Button({ job }) {
@@ -380,6 +923,7 @@ function Button({ job }) {
 
 console.log("model: ", getModel());
 
+
 function Meter({ job }){
     const data = JSON.parse(job.rb).d;
 
@@ -387,7 +931,6 @@ function Meter({ job }){
         <React.Fragment>
             <div>Meter for channel: {job.channel}</div>
             <div id={job.channel}>{data.map(createGraphNode)}</div>
-            <br />
         </React.Fragment> 
     );
 }

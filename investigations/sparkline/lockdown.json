@@ -1,0 +1,59 @@
+[
+{
+"id": "1001111",
+"type": "data.heartbeat",
+"parent": "001",
+"channel": "?action=start",
+"data": "heartbeat status"
+},
+{
+"id": "4100",
+"type" : "data.random",
+"parent": "002",
+"channel": "?job=random&min=20&max=30",
+"data": 23
+},
+{
+"id": "4200",
+"type" : "data.random",
+"parent" : "003",
+"channel": "?job=random&min=30&max=45",
+"data": 42
+},
+{
+"id": "4300",
+"type" : "data.tweet",
+"parent": "004",
+"channel" : "?job=tweet&lang=en&search=cheese",
+"data": "Kraft cheese macaroni"
+},
+{
+"id": "4310",
+"type" : "data.tweet",
+"parent": "004",
+"channel" : "?job=tweet&lang=en&search=cheese",
+"data": "I love brie cheese"
+},
+{
+"id": "4400",
+"type" : "data.tweet",
+"parent": "005",
+"channel": "?job=tweet&lang=en&search=cat-stock",
+"data": "CAT stock has gone up 2 points"
+},
+{
+"id": "4500",
+"type" : "data.tweet",
+"parent": "006",
+"channel" : "?job=tweet&lang=ru&search=кот",
+"data": "Это мой кот"
+},
+{
+"id": "4600",
+"type" : "data.sentiment",
+"parent": "4300",
+"channel": "?job=sentiment&data=4300",
+"data": 3
+}
+
+]

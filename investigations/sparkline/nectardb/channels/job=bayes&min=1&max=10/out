@@ -1,0 +1,9 @@
+{
+  "id": "1628106113565042757",
+  "type": "data.random",
+  "channel": "job=bayes&min=1&max=10",
+  "job": "bayes",
+  "min": 1,
+  "max": 10,
+  "data": "7"
+}

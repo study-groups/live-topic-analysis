@@ -1,0 +1,27 @@
+    if (req.method === 'GET' && path === '/') {
+        res.writeHead(200, {"Content-Type": "application/json"});
+
+        // in future call spawn and get stdio from webtool-json-hook 
+        // figure out how to specify which hook to use where "/json-hook" is currently located manually  
+        // req vars passed to json-hook file
+        
+        // random number generated between 1 and max
+        //const defaultMin = query.min || 0;
+        const defaultMax = query.max || 20;
+        const pipeline = spawn(`/home/admin/src/live-topic-analysis/investigations/sparkline/`);
+        //const pipeline = spawn(`/home/admin/src/live-topic-analysis/investigations/sparkline/json-hook`, [defaultMax]);
+        //const pipeline = spawn(`/home/admin/src/live-topic-analysis/investigations/sparkline/json-hook`,
+        //                       [defaultMin, defaultMax]);
+
+        //pipeline.stdout.on("data", function(data) {
+            //console.log("data to send to client: ", data.toString());
+        //});
+
+        //pipeline.stderr.on("data", (err) => console.log("Error: ", err))
+        pipeline.stderr.on("data", 
+            (err) => console.log("Error: ",Buffer.from(err).toString()))
+        
+        // pipes stdout of process to client
+        pipeline.stdout.pipe(res);
+    }
+

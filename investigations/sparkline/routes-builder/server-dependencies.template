@@ -1,0 +1,30 @@
+const http = require("http");
+const fs = require("fs");
+const url = require("url");
+const { spawn } = require("child_process"); // neither used
+
+// https://nodejs.org/docs/latest/api/process.html#process_process_argv
+const PORT = process.argv[2] 
+const HTML_PATH = process.argv[3]
+const JSON_DIR = process.argv[4]
+const SERVER_IP = "0.0.0.0"; // catch all network interface
+
+const server = http.createServer( function(req, res) {
+    // From https://nodejs.org/docs/guides/anatomy-of-an-http-transaction
+    // The method here will always be a normal HTTP method/verb. The
+    // url is the full URL without the server, protocol or port. For
+    // a typical URL, this means everything after and including the
+    // third forward slash. 
+
+    // The request object is an instance of IncomingMessage.
+
+    // parse the url
+    const parsedUrl = url.parse(req.url, true);
+
+    // path
+    const path = parsedUrl.pathname;
+    const trimmedPath = path.replace(/^\/+|\/+$/g, "");
+    
+    // query string as object
+    const query = parsedUrl.query;
+

@@ -1,28 +1,162 @@
 #!/bin/bash
-
-# This is a server side dispatcher 
-# that dispatches to nectardb channels by 
-# calling $db/$channel/update.
-# By Convention, channel update writes to 
-# $db/$channel/fifo.
-
+# $1 = query string sent by form.
+# e.g. "job=bayes&min=20&max=30"
+source ./nectarlib.sh
 db="/home/admin/src/live-topic-analysis/investigations/sparkline/nectardb"
-job="bayes"
-#querys=("min=1&max=10" "min=7&max=")
-querys=( $(cd "$db/$job";  ls -d */ | sed 's/.$//') )
-low=${1:-0}
-high=${2:-20}
+log="/dev/stderr"
 
-# Do the updates of all channels
-for query in "${querys[@]}"
-do
-(cd "$db/$job/$query"; ./update) > "$db/$job/$query/fifo" &
-done
+random-update() {
+  eval "$@"
+  #parse-query "$1"
+  local id="$(date +%s%N)"
+  local data # needs to be on separate line for exit handling
+  # assigns stdout or stderr to variable data
+  data="$(shuf -i $min-$max -n 1 2>&1)"
+  # exit status from subshell will be captured
+  # can apply it when we're ready: echo "Exit status from subshell : $?"
 
-# Collect channels into single job fifo
-for query in "${querys[@]}"
-do
-cat "$db/$job/$query/fifo" > $db/$job/fifo
-done
+  local re='^[0-9]+$'
+  
+  [[ $data =~ $re ]] && \
+  # if data is a number, type is random
+  jq <<< '{"id": "'$id'", "parent": "ipsum", "channel": "?job='$job'&min='$min'&max='$max'", "type": "data.'$job'", "data": "'$data'"}' || \
+  
+  # if data is not a number, type is error
+  jq <<< '{"id": "'$id'", "parent": "ipsum", "type": "data.error", "data": "'$data'"}'
+}
 
-cat "$db/$job/fifo"  # this goes to fetch, needs jq
+make-capitalized() {
+  eval "$@"
+  local id="$(date +%s%N)"
+  jq <<< '{"id": "'$id'", "type": "'$job'", "data": "'${value^^}'"}'
+}
+
+make-name() {
+  eval "$@"
+  local id="$(date +%s%N)"
+  jq <<< '{"id": "'$id'", "type": "'$job'", "data": "'${value^}'"}'
+}
+
+heartbeat-update-channels(){
+  channels=($db/channels/*);
+  for c in "${channels[@]}"; do
+    #"$c/update"  > "$c/fifo"
+    "$c/update" 
+  done
+
+  while c in channels; do
+    cat "$c/fifo" > "$db/fifo"
+  done
+
+  make-json-nom "data.channels" ${channels[@]}
+}
+
+make-json-nom(){
+cat<<EOF
+{
+"id": $(date +%s%N),
+"type": "$1",
+"data": "${@:2}"
+}
+EOF
+
+}
+
+# blocks on fifo write until fifo is opened
+#heartbeat-update-channels  > $db/fifo
+#cat $db/fifo | jq -s
+
+# turn on and off Nectar FSM
+
+state="$(cat $db/state)"  # one of IDLE, RUNNING
+
+# EXPECTATION
+# expecting this to be a query string from the server
+#action="$1"
+#echo "ACTION is $action"
+#while true; do
+#sleep 1;
+#done
+#echo ""
+
+# Nectar state transition rules
+business-logic(){
+    local qs=$1
+    local state="$(cat $db/state)"
+    log "In business-logic with state=$state"
+    log "In business-logic with qs=$qs"
+
+    #make-json "data.querystring" "$1" 
+    # ensures only json on stdout
+    #export cli_query="$(parse-query "$1" 2> errs)"
+    #log "cli_query: $cli_query"
+    #eval "$cli_query"
+
+    parse-query "$1" 2> errs  # creates kvs array in current shell
+    eval "${kvs[*]}" # to get action
+    log "business-logic kvs: ${kvs[*]}"
+    log "business-logic action: $action"
+    local ret=$?
+    [ $ret -ne 0 ] && \
+        (make-json-nom data.error "Error parsing querystring on server."; exit) 
+
+    "${state}_${action}" "{$kvs[*]}"
+
+    #[ $state == "RUNNING" ] && [ $action == "update" ] && \
+    #     RUNNING_update "${kvs[*]}"
+
+#    [ $state == "RUNNING" ] && [ $action == "stop" ] && \
+#        RUNNING_stop
+#    [ $state == "IDLE" ] && [ $action == "update" ] && IDLE_update 
+#    [ $state == "IDLE" ] && [ $action == "stop" ] && IDLE_stop
+
+    ret=$?
+    [ $ret -ne 0 ] && \
+      make-json-nom "data.error" "ERR business-logic error code: $ret"
+
+    echo $state > $db/state
+    log "Exiting business-logic with state=$state"
+    log "Exiting business-logic with action=$action"
+    log "Exiting business-logic with exit-status=$ret"
+}
+
+# EXPECTATION
+# State transition functions. (STATE,ACTION) -> STATE
+IDLE_update(){
+  echo "RUNNING" > $db/state
+  make-json-nom data.fsm "Nectar FSM state is RUNNING"
+}
+
+RUNNING_stop(){
+  echo "IDLE" > $db/state
+  make-json-nom "data.fsm" "Nectar FSM state is IDLE"
+  log "In RUNNING_stop exit code is $?"
+}
+
+RUNNING_start() {
+  local heartbeat="$(date +%s%N)"
+  make-json-nom "data.heartbeat" "$heartbeat" 
+}
+
+# should be RUNNING_start ???
+RUNNING_update(){
+  eval "$@"
+  echo "RUNNING" > $db/state
+  # should there be a default function for heartbeat when there's only an action and no job?
+
+  # also: 
+  "${job}-${action}" "$@"
+  log "${job}-${action} and $@"
+  # random-update "job=random min=$min max=$max"
+  log "In RUNNING_update exit code is $?"
+}
+
+#if [ "$new_state" == "RUNNING" ]; then
+#./json-hook-heartbeat
+#fi
+
+#if [ "$new_state" == "IDLE" ]; then
+#  make-nom data.fsm "Nectar FSM state is IDLE" | jq . -s
+#fi
+
+business-logic $1

@@ -1,5 +1,6 @@
 export SPARK_TCP_IP=$(hostname -I) # first token is assigned to var
 export SPARK_TCP_PORT=9009
+
 PS1="tweetgen> "
 lta-tweetgen-build(){
  docker build -t lta-tweetgen -f Dockerfile .
@@ -19,6 +20,7 @@ lta-tweetgen-start() {
   -p 9009:9009 \
   -v /home/admin/src/live-topic-analysis/tweetgen:/app \
   -e TWITTER_CONSUMER_KEY \
+  -e SPARK_TCP_PORT \
   -e TWITTER_CONSUMER_SECRET \
   -e TWITTER_ACCESS_TOKEN \
   -e TWITTER_ACCESS_SECRET \

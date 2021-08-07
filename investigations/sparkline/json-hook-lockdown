@@ -1,0 +1,19 @@
+#!/bin/bash
+source ./nectarlib.sh # has parseQuery, etc
+parse-query $1
+
+log="logfile"
+echo "Got $1" > $log 
+echo "Got file: $file" >> $log 
+cat ./$file  # this should work when sending "update lockdown.json"
+#cat ./$file.json
+
+##########################
+# Basement
+#########################
+# Define assumptions.. assume RUNNING and therefore 
+# json-hook would call FSM_update, which calls children update
+# then json-hook would call condense and collect channel fifos
+# then json-hook would cat db/fifo through jq  to create heartbeat array
+#state="$(cat $db/state)"  # one of IDLE, RUNNING
+

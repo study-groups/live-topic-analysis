@@ -1,0 +1,14 @@
+121c111
+<   cli = Cli();
+---
+>   cli = Cli(handleInput);
+127,176d116
+
+< 
+183c123
+< function Cli(id="cli", parentId="cli-container",update=cliUpdate) {
+---
+> function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
+208d147
+< 
+ 

@@ -1,0 +1,8 @@
+jobProcess=${1:-"./bayes"}
+jobId=${2:-"001"}
+rb_len=${3:-"60"}
+nectar_dir=${4:-"./data"}
+while true; do
+  cat ./fifo | $jobProcess | ./ssrb $rb_len $nectar_dir/$jobId; 
+  #cat ./fifo | $jobProcess
+done

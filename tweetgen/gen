@@ -1,0 +1,9 @@
+#printf -v key_code "%d" "4"
+#echo  -n "$key_code" >  ./fifo 
+
+while true; do
+  d=$(date +%s)
+  #echo $d 
+  echo  "$d " >  ./fifo
+  #sleep .5
+done

@@ -14,7 +14,7 @@ function createGraphNode(json, i) {
 function App() {
     useEffect(function() {
         const interval = setInterval(function() {
-            if(getModel().isStreamOn) {
+            if(getModel()["app"].on) {
                 handleGetData();
             }             
         },
@@ -28,60 +28,40 @@ function App() {
     return (
         <React.Fragment>
             <h1>Sparkline</h1>
-            <Meter/>
-            <button
-                onClick={ handleClick }
-            >
-                { !getModel().isStreamOn ? "Turn stream on" : "Turn stream off" }
-            </button>
+            <Meter job={ getModel().app } />
+            <Button job={ getModel().app } />
+            <Meter job={ getModel()["001"] } />
+            <Button job={ getModel()["001"] } />
+            <Meter job={ getModel()["002"] } />
+            <Button job={ getModel()["002"] } />
         </React.Fragment>
+    );
+}
+
+function Button({ job }) {
+
+    return (
+        <button
+            id={job.name}
+            onClick={ () => handleClick(job) }
+        >
+            {
+                !getModel()[job.name].on ? "Turn On" : "Turn Off"
+            }
+        </button>
     );
 }
 
 console.log("model: ", getModel());
 
-function Meter(){
+function Meter({ job }){
+
+    const data = JSON.parse(job.rb).d;
+
     return (
         <React.Fragment>
-            <div id="meter">{getModel().data.map(createGraphNode)}</div>
-            <div id="meter2">{getModel().data2}</div>
+            <div>Meter {job.name}</div>
+            <div id={job.name}>{data.map(createGraphNode)}</div>
         </React.Fragment> 
     );
-}
-
-function LineChart() {
-
-
-    useEffect(() => {
-        update();               
-    }, [getModel().lineGraph]);
-    
-    function update() {
-        const chartComponentSelection = select("#sparkline-container");
-        
-        if (chartComponentSelection.empty()) {
-            return;
-        }
-
-        const mainSvgSelection = select("svg");
-        
-        if (!mainSvgSelection.empty()) {
-            mainSvgSelection.remove();
-        }
-
-        const lineGraphContainer = document.getElementById(
-            "sparkline-container"
-        );
-
-        const options = {
-            size: [500, 200],
-            value: {
-                x: d => d.date,
-                y: d => d.value
-            }
-        };
-
-        sparkline(lineGraphContainer, getModel().lineGraph, options);
-        
-    }
 }

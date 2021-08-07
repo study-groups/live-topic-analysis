@@ -1,0 +1,100 @@
+ListComponent has 0 or more children of type ListElement.
+Elements are used by Components but user does not call them directly.
+ListElement is a wrapper for a single 'terminal component' like Meter
+ListElement contains metadata about a component that is manipulated
+by the ListComponent.
+
+ListElement is an object with following key/val:
+{
+  on:true, // display on/off
+  component: {channel:xxx, render: Meter } // e.g. MeterComponent
+}
+
+e.setProps();
+e.render();
+
+A MeterComponent has:
+{
+  label:
+  channel:
+  rb: ringBufferOfNoms
+}
+
+
+const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
+
+function Fsm(){
+    states=["RUNNING", "IDLE"];
+    actions=["start", "stop"];
+    const fsm = new Map();
+
+    // with enumerated states/actions
+    fsm.set([states.RUNNING, actions.start],
+        () => states.RUNNING);
+
+    fsm.set("RUNNING_start", () => "RUNNING");
+
+    return fsm;
+}
+
+fsm = Fsm();
+// enumerations
+newStateId=fsm.get([stateId,actionId])(inputData)
+newStateId=fsm.get([states.RUNNING,actions.start])(inputData)
+// via string states
+newState=fsm.get(`${state}_${action}`)(inputData)
+newState=fsm.get("RUNNING_start")(inputData)
+
+
+
+
+
+
+// maybe use NOM data type as property in model. 
+// i.e. data.random becomes Random[] in the model
+// {random: Random[]}
+
+// Channel: defined by a unique type
+// A slot: is defined by a job ID whose data type 
+//         is consistent with the channel holding the slot.
+
+
+/*
+NOM D3 object:
+ID
+data.d3.tsd
+{
+  date:aaaa,
+  value:bbbb
+}
+*/
+#!/bin/bash
+# $1 = query string sent by form.
+# e.g. "job=bayes&min=20&max=30"
+
+db="/home/admin/src/live-topic-analysis/investigations/sparkline/nectardb"
+# send either results or "status only"
+# TODO check microsecond time stamp of results file.
+cat "$db/fifo" | jq -s
+#echo "These cmd line args were passed: $@"; > /dev/stderr
+
+
+function notes-on-server-to-client-heartbeat(){
+
+cat<<EOF
+
+Send new channel data if heartbeat data (update-result)  
+has changed.
+
+{
+  id:NOMTIMESTAMP
+  channels:[ch1, ch2, ... ],
+  systemState:RUNNING;
+}
+
+Otherwise just send status related variables
+{
+  systemState:RUNNING;
+}
+EOF
+}

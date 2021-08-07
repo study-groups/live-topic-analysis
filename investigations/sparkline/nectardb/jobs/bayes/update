@@ -1,0 +1,65 @@
+#!/bin/bash
+db="/home/admin/src/live-topic-analysis/investigations/sparkline/nectardb"
+log="/dev/stderr"
+
+# query string is the dir name w/o leading ?
+qs=$(cd `dirname $0` && pwd)
+qs="$(basename $qs)"
+
+# parse query string here so per-channel data can be 
+# used in the business logic.
+
+# removes = and & from query string
+# assumes no leading query string
+function parse-query(){
+    saveIFS=$IFS
+    IFS='=&'
+    parm=($1)
+    IFS=$saveIFS
+    echo "${parm[@]}"
+}
+
+qsarray=( $(parse-query "$qs") )
+
+#?job=bayes&min=20&job=bayes
+channel="$qs"
+
+# initial value of NOM json
+json_nom='{ "id": "'$(date +%s%N)'", "type": "data.random", "channel": "'$channel'"}'
+
+
+len="${#qsarray[@]}"
+
+re='^[0-9]+$'
+
+# creates variables from query string
+for (( i=0; i<$len; i+=2 )); do
+  key="${qsarray[$i]}"
+  value="${qsarray[$i+1]}"
+
+  declare "${qsarray[$i]}"="${qsarray[$i+1]}"
+  # if it's a number, make sure it comes out as one for the client
+  if [[ $value =~ $re ]]; then
+    json_nom="$( echo $json_nom | jq '. + {"'$key'": '$value'}')"
+    else
+      # otherwise, it's a string
+      json_nom="$( echo $json_nom | jq '. + {"'$key'": "'$value'"}')"
+  fi
+done
+
+# add the specific data at the end
+echo "$json_nom"  | jq '. + {"data":"'$(shuf -i $min-$max -n 1)'" }'
+
+#echo "${qsarray[*]}" # for debugging only
+
+#cat <<EOF
+#{
+#    "id": "$(date +%s%N)",
+#    "type": "data.random",
+#    "channel": "$channel",
+#    "job": "$job",
+#    "min": "$min",
+#    "max": "$max",
+#    "data": "$(shuf -i $min-$max -n 1)"
+#}
+#EOF

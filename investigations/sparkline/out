@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1626386931005197600,
+    "type": "data.heartbeat",
+    "parent": "FSM_ID",
+    "state": "FSM_STATE",
+    "action": "update",
+    "status": "status quo"
+  },
+  {
+    "id": "'1626386930987084125'",
+    "type": "component.meter",
+    "channelToLookFor": "?job=random&min=10&max=20",
+    "props": {
+      "title": "Hypothesis A"
+    }
+  },
+  {
+    "id": 1626386931021149000,
+    "type": "data.random",
+    "channel": "?job=random&min=10&max=20",
+    "data": 7
+  },
+  {
+    "id": 1626386931041142300,
+    "type": "data.random",
+    "parent": 1,
+    "data": 6
+  }
+]

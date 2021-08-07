@@ -1,0 +1,74 @@
+<html>
+<p>
+Example of Sparkline component.
+</p>
+<script crossorigin 
+  src="https://unpkg.com/react@16/umd/react.development.js">
+</script>
+<script crossorigin 
+  src="https://unpkg.com/react-dom@16/umd/react-dom.development.js">
+</script>
+<script crossorigin
+  src="https://unpkg.com/d3@3.5.9/d3.js">
+</script>
+<!-- <script crossorigin
+  src="https://unpkg.com/react-sparklines@1.7.0/build/index.js">
+</script> -->
+<script crossorigin 
+  src="https://unpkg.com/babel-standalone@6.26.0/babel.js">
+</script>
+
+<!-- Following from: https://reactjs.org/docs/state-and-lifecycle.html -->
+
+<p>Sparkline ver  </p>
+
+<div id="root"></div>
+<script type="text/babel">
+
+const {useState, useEffect} = React;
+
+function CreateInterval(){
+    return (function () {
+        const interval = setInterval(function() {
+            fetch('http://:2020/json')
+            .then(handleErrors)
+            .then(response => response.json())
+            .then(function(response) {
+                //setState(response);
+                console.log("response: ", response);
+            }).catch(function(error) {
+                console.log(error);
+            });
+        }, 1000);
+
+    });
+}
+
+function App() {
+
+    const [state, setState] = useState(null);
+
+    useEffect(function() {
+        return () => clearInterval(heartbeatInterval);
+    }, [])
+
+    
+    return ( <AppContainer msg="hi from props"/>);
+}
+
+function AppContainer(props){
+    return (<div>In AppContainer div with props.msg={props.msg}</div>); 
+}
+
+const mountPoint = document.getElementById("root");
+ReactDOM.render(<App />, mountPoint);
+
+
+function handleErrors(response) {
+    if (!response.ok) {
+        throw Error(response.statusText);
+    }
+    return response;
+}
+</script>
+</html>

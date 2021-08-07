@@ -4,5 +4,6 @@ cps
 .ipynb_checkpoints
 spark/__pycache__/
 spark/err
-
+investigations/React-Flashcard-App
+investigations/flashcard-app-react
 

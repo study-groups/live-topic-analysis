@@ -2,7 +2,7 @@
 nectar-repl()( 
     FSM_STATE="IDLE"
     states=(IDLE RUNNING); 
-    actions=(start stop update);
+    actions=(start stop update create);
 
     # define function in new subshell (kind of like a closure)
     ctrl_c() {
@@ -71,6 +71,7 @@ nectar-repl()(
       fi 
 
     [ $FSM_STATE == RUNNING ] && RUNNING_update
+
     done < /dev/stdin
 )
 
@@ -81,6 +82,10 @@ IDLE_start(){
 }
 
 IDLE_stop(){
+  echo "$FSM_STATE" # same as IDLE
+}
+
+IDLE_create(){
   echo "$FSM_STATE" # same as IDLE
 }
 
@@ -103,6 +108,10 @@ RUNNING_start(){
   echo "$FSM_STATE"
 }
 
+RUNNING_create(){
+  echo "$FSM_STATE"  # Don't create while running, echo current state.
+  ( echo "Can't create while RUNNING") > /dev/stderr
+}
 # write NOM object out to fifo. This is called 
 # by the main while loop above.
 
@@ -114,16 +123,24 @@ RUNNING_update(){
 
   # db for all jobs
   db="/home/admin/src/live-topic-analysis/investigations/sparkline/nectardb"
-
+  pwd_old=$PWD
   # Call update on all subscribed channels
   job="bayes"
-  channel="$job/min=15&max=52"
-  $db/$channel/update > $db/$channel/fifo
+  param="min=1&max=10"
+  channel1="$db/channels/$job/$param"
+  cd $channel1 && ./update > ./fifo &
+
+  param="min=7&max=17"
+  channel2="$db/channels/$job/$param"
+  cd $channel2 && ./update > ./fifo &
+
+  cd $pwd_old
 
   # After all job updates fill their channel fifos, 
   # transfer all channel fifos to db fifo.
-
-  cat $db/$channel/fifo > $db/fifo
+  cat $channel1/fifo > $db/fifo 
+  cat $channel2/fifo > $db/fifo 
+  echo "At the end of RUNNING_update" > /dev/stderr
 
   sleep .5  # Should be in inital variable (not run time)
 }
@@ -144,4 +161,8 @@ S3         S4
 S4         S3           <- return new state
 
 EOF
+
+nectar-query-string-parse(){
+
+}
 }

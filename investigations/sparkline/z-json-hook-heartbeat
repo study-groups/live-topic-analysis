@@ -1,0 +1,23 @@
+d=$PWD
+min=${1:-1};
+max=${2:-10}
+component_id=$(date +%s%N);
+
+create_component() {
+    cat<<EOF
+{
+    "id": $component_id,
+    "type":"component.meter",
+    "channel":"?job=random&min=$min&max=$max",
+    "data": "Random Number from $min to $max"
+}
+EOF
+}
+
+
+(\
+#    $d/gen/heartbeat; \
+     create_component \ 
+     $d/gen/random-new $component_id $min $max; \
+     $d/gen/random-new $component_id $min $max; \
+) | jq -s .

@@ -1,0 +1,15 @@
+#!/bin/bash
+jobs=(001, 002)
+low=${1:-0}
+high=${2:-20}
+for job in ${jobs[@]}
+do
+cat <<EOF
+{
+    "id": "$(date +%s%N)",
+    "type": "data.random",
+    "parent": "$job",
+    "data": "$(shuf -i $low-$high -n 1)"
+}
+EOF
+done | jq -s

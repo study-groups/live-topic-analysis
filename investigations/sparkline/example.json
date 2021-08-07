@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1626382495645254000,
+    "type": "data.heartbeat",
+    "parent": "FSM_ID",
+    "state": "FSM_STATE",
+    "action": "update",
+    "status": "status quo"
+  },
+  {
+    "id": 1626382495661283800,
+    "type": "data.random",
+    "parent": 1,
+    "data": 9
+  },
+  {
+    "id": 1626382495681240000,
+    "type": "data.random",
+    "parent": 2,
+    "data": 26
+  }
+]
