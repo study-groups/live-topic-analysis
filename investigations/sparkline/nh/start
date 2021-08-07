@@ -3,5 +3,5 @@ port="${1:-2600}"
 cwd="/home/devops/www/live-topic-analysis/investigations/sparkline/nh"
 cmd="/snap/bin/node"
 args="/home/devops/src/js-study-group/webtool/node-server.js"
-args+=" $port $cwd/index.html $cwd"
+args+=" $port $cwd/public/index.html $cwd"
 daemonize -c "$cwd" -e "$cwd/err" -o "$cwd/log" "$cmd" $args
