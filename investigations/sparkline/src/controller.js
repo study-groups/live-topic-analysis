@@ -12,35 +12,35 @@ Controller related functions for:
 
 // FSM
 function RUNNING_start(){
-    return gStates.RUNNING;
+    return gFsmStates.RUNNING;
 }
 
 function RUNNING_stop(){
-    return gStates.IDLE;    
+    return gFsmStates.IDLE;    
 }
 
 function IDLE_start(){
-    return gStates.RUNNING;    
+    return gFsmStates.RUNNING;    
 }
 
 function IDLE_stop(){
-    return gStates.IDLE;    
+    return gFsmStates.IDLE;    
 }
 
 function IDLE_update(){
-    return gStates.IDLE;    
+    return gFsmStates.IDLE;    
 }
 
 function RUNNING_update(query){
     handleGetData(query);
-    return gStates.RUNNING;
+    return gFsmStates.RUNNING;
 }
 
-function enumToKeyState(stateId){
-    return enumToKey(gStates,stateId);
+function enumToStr(stateId){
+    return enumToKey(gFsmStates, stateId);
 }
 function enumToKeyAction(actionId){
-    return enumToKey(gActions,actionId);
+    return enumToKey(gFsmActions,actionId);
 }
 
 function findEnumFromStateEnumArray(val) {
@@ -73,7 +73,7 @@ function isNull(input) {
 }
 
 function isAction(input) {
-    return Object.keys(gActions).includes(input);
+    return Object.keys(gFsmActions).includes(input);
 }
 
 function toQuery(acc, value, index) {
@@ -92,10 +92,10 @@ function handleInput(cliInput) {
     if (acceptable) { 
 
         // FSM state transition: STATE_action()
-        const stateStr = enumToKeyState(getModel().stateId);
+        const stateStr = enumToStr(getModel().stateId);
         const newStateId = window[ stateStr+"_"+cliTokens[0] ](query);
-        const newStateStr =enumToKeyState(newStateId);
-        console.log(`New state ${enumToKeyState(newStateId)}`);
+        const newStateStr =enumToStr(newStateId);
+        console.log(`New state ${enumToStr(newStateId)}`);
 
 
         // if RUNNING, fetch, if IDLE, dont. => occurring in useEffect
@@ -128,8 +128,10 @@ function handleInput(cliInput) {
 
 async function handleGetData(query) {
 
+
     try {
-        const response = await fetch(DATA_SERVER_URL+query);
+        //{mode:"no-cors", credentials:"omit"}
+        const response = await fetch(DATA_SERVER_URL+query,{});
         const heartbeatPacket = await response.json();
         console.log({heartbeatPacket});
         const IDs = new Map();

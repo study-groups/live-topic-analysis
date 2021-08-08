@@ -1,72 +1,34 @@
 source ~/src/js-study-group/webtool/webtool.sh
+app="$PWD"
+src="$app/src"
 PS1="sparkline> "
 export VER=001
-export HTTP_PORT=1234
+export HTTP_PORT=2600
 export WS_PORT=5678
 export HOSTNAME_IP=$(webtool-server-ip) # gets first IP returned
-export HTML_FILE="$PWD/index.html"
-export JSON_FILE="$PWD/index.json"
-export JSON_DIR="$PWD"
+export HTML_FILE="$PWD/index.html" # nectar-server single page server
 
 # most recently working version
 js_files=(
-./RingBuffer.js
-./app.js
-./dependencies.js
-./model.js
-./controller.js
-./view.js
+$src/RingBuffer.js
+$src/app.js
+$src/dependencies.js
+$src/model.js
+$src/controller.js
+$src/view.js
 )
-
-js_files_mike=(
-./RingBuffer.js
-./app.js
-./dependencies.js
-./model.js
-./controller.js
-./view.js
-)
-
-
-sparkline-build-mike-old () {
-  export HEADER="$(cat ./header.html)"
-  export CDN="$(cat ./cdn.html)"
-  export JS="$(cat ./mike/dependencies.js \
-                   ./mike/model.js \
-                   ./mike/controller.js \
-                   ./mike/view.js \
-                   ./mike/RingBuffer.js\
-                   | envsubst)"
-  export FOOTER="$(cat ./footer.html)"
-  cat index.env | envsubst > index-m.html
-}
-
-sparkline-build-mike () {
-  export HEADER="$(cat ./header.html)"
-  export CDN="$(cat ./cdn.html)"
-  export JS="$(cat ${js_files_mike[@]} | envsubst)"
-  export FOOTER="$(cat ./footer.html)"
-  cat index.env | envsubst > index-m.html
-}
-
-
-
-sparkline-start-mike() {
-  webtool-node-server  1235 ./index-m.html .
-}
 
 sparkline-build () {
-  export HEADER="$(cat ./header.html)"
-  export CDN="$(cat ./cdn.html)"
+  ver=${1:-"001pre1"}
+  target="$app/index-$ver.html"
+  linkname="$app/index.html"
+  export HEADER="$(cat $src/header.html)"
+  export CDN="$(cat $src/cdn.html)"
   export JS="$(cat ${js_files[@]} | envsubst)"
-  export FOOTER="$(cat ./footer.html)"
-  cat index.env | envsubst > index.html
-}
-
-# weboot-node-server calls this every time JSON request is made
-webtool-json-hook(){
-   cat $JSON_FILE
-  // printf  "{'id':$(date +%s%N),'type':'sparkline.data','data':$RANDOM}\n\n"
+  export FOOTER="$(cat $src/footer.html)"
+  cat $src/index.env | envsubst > $app/index-$ver.html
+  rm -f $app/index.html
+  ln -s $target $linkname
 }
 
 # typical use: sparkline-start index.html > sparkline.log &
@@ -77,7 +39,7 @@ sparkline-start() {
   # server writes log info to standard out  
 
   #webtool-node-server always calls webtool-build-hook before serving
-  webtool-node-server  $HTTP_PORT $HTML_FILE $JSON_DIR
+  webtool-node-server  $HTTP_PORT $HTML_FILE  .
 }
 
 sparkline-stop() {
