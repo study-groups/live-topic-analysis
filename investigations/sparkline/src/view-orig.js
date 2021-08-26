@@ -2,7 +2,17 @@
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
 // VIEW
+// maybe for a more dynamic structure.
+// WIP
+// packet.forEach(data => Component(data.type)) just musing
+
 function createComponent(nom) {
+    // type
+    // props
+    // nomToProps
+    // parent
+    // children
+    // render/update
     const type = nom.type.split(".")[1];
 }
 
@@ -64,39 +74,76 @@ function render(type) {
 }
 */
 
+// "The Barber" called by App useEffect().  Calls update on all
+// components (stateToProps) before render() functions grab
+// data from Model.componentName.props.
+//function appUpdate(){
+function stateToProps(){
+
+    const clientFsmStateStr = enumToStr(getState()["appFsm"]);
+    setProp("app","clientFsmState", clientFsmStateStr);
+    setProp("app","clientHeartbeat", getState()["clientHeartbeat"]);
+
+    // Alternative way of updating all components at a time
+/*    updateComponents({
+            app: { 
+                 ...getComponents()["app"],
+                 clientHeartbeat:getState()["clientHeartbeat"]
+            }
+        }
+    );
+*/
+}
+
+// The Barber's FSM: 
+// ACTION: toggle
+// STATES: dead, alive
+// dead_toggle => alive
+// alive_toggle => dead
+let alive=true;
 function App() {
-
-    useEffect(
-        function() {
-            const interval = setInterval(function() { 
+    // Since we are passing [] as second paramenter to useEffect,
+    // it  is really "onMount" and returns "onUnmount".
+    //const alive = getProp("app", "alive");
+    useEffect( function() {
+            let interval=null;
+            interval = setTimeout(function heartbeat() { 
+                console.log("In heartbeat:",getState()["clientHeartbeat"]);
                 updateState({"clientHeartbeat": Date.now()});
-            }, 1000);
+                stateToProps();
+                updateView();
+                alive ? setTimeout(heartbeat, 1000) : null ;
+            }, 1000); // initial delay 
 
-           return () => clearInterval(interval);
+           // called on "mount" and before render if 2nd arg permits
+           console.log("In useEffect after setInterval set");
 
-        }, []);
+           // called on "dismount" and after render if 2nd arg permits
+           return function(){
+               console.log("In useEffect post function.");
+               clearInterval(interval);
+           }
+       }, [alive]);  // adding this prevents calling each ReactDOM.render()
 
+    // props set i previous update pass called from heartbeat
+    const clientHeartbeatStr = getProp("app","clientHeartbeat");
+    const clientFsmStateStr = getProp("app","clientFsmState"); 
 
-    // done in the update pass
-    // Cli.update();
-    // const status = enumToStr(getState()["clientFsm"])
-
-    const props = getComponent("app"); // component is a props map
-
-    //const clientHeartbeatStatus = getModel()["clientHeartbeatStatus"];
-    const clientHeartbeatStatus = getComponent("app")
-                                    .heartbeatStatus;
+    console.log("In App before return.");
+    const Ic = InputComponent();
     return (
         <React.Fragment>
             <ReactTitle title="Sparkline" />
-            <div>Client Heartbeat Status: {clientHeartbeatStatus}</div>
-            <div>Client FSM state is: {props.status} </div>
+            <div>Client Heartbeat Status: {clientHeartbeatStr}</div>
+            <div>Client FSM state is: {clientFsmStateStr} </div>
             <ReactCli />
-            <div>CLI status: </div>
+            <Example.render />
+            <Ic.React />
             <div id="meterlist">
             </div>
         </React.Fragment>
-    );
+    ); 
+            //<InputComponent.React />
 }
 
 class ReactTitle extends React.Component {
@@ -114,17 +161,52 @@ class ReactCli extends React.Component {
   }
 }
 
-function cliUpdate(theCli){
-    //theCli.status("implement this method"); 
-    alert("implement this method"); 
+customElements.define("component-cli", ReactCli);
+
+function cliUpdate(){
+    alert("cliUpdate called");
+    const statusStr = getState()["clientHeartbeat"];
+    updateComponents({"app":{heartbeatStatus:statusStr}});
 }
+
+const Example = {
+    render: () => React.createElement("div", null, "This is the example")
+};
+
+function InputComponent(){
+    const cliText="enter help to get started"
+    const html=`
+        <form
+            style="margin-bottom: 0"
+            onSubmit="handleSubmit"
+        >
+            <input 
+                type="text"
+                value="${cliText}"
+            />
+            <button>Submit</button>
+        <div style="font-size:.5rem">get status from component</div>
+        </form>`;
+ 
+    return {
+        status:"cli status on cli component object",
+       // update: () => null,
+       // render: function (){ return null;},
+        React: () => React.createElement(
+                "div", { dangerouslySetInnerHTML: {__html: html} })
+                //"div", null, "cli goes here")
+        };
+}
+
+
 
 // "when and where, not what
 function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
-    const cliForm = document.createElement("form");
-    const input = document.createElement("input");
-    const button = document.createElement("button");
-    
+    //const cliForm = document.createElement("form");
+    //const input = document.createElement("input");
+    //const button = document.createElement("button");
+    const cliHtml=`<form>Cli:input<input/><button>enter</button></form>`
+ 
     input.placeholder = "Enter command here";
     button.textContent = "Submit";
     
@@ -144,7 +226,6 @@ function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
 
     // if parent is parentId and you need to look it up
     //document.getElementById(parentId).append(cliForm);
-
     return {
         update:update,
         render: function (){ return null;},

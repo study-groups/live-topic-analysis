@@ -128,17 +128,13 @@ function App() {
     // props set i previous update pass called from heartbeat
     const clientHeartbeatStr = getProp("app","clientHeartbeat");
     const clientFsmStateStr = getProp("app","clientFsmState"); 
-
     console.log("In App before return.");
-    const Ic = InputComponent();
     return (
         <React.Fragment>
             <ReactTitle title="Sparkline" />
             <div>Client Heartbeat Status: {clientHeartbeatStr}</div>
             <div>Client FSM state is: {clientFsmStateStr} </div>
-            <ReactCli />
-            <Example.render />
-            <Ic.React />
+            <ReactCli/>
             <div id="meterlist">
             </div>
         </React.Fragment>
@@ -169,58 +165,28 @@ function cliUpdate(){
     updateComponents({"app":{heartbeatStatus:statusStr}});
 }
 
-const Example = {
-    render: () => React.createElement("div", null, "This is the example")
-};
-
-function InputComponent(){
-    const cliText="enter help to get started"
-    const html=`
-        <form
-            style="margin-bottom: 0"
-            onSubmit="handleSubmit"
-        >
-            <input 
-                type="text"
-                value="${cliText}"
-            />
-            <button>Submit</button>
-        <div style="font-size:.5rem">get status from component</div>
-        </form>`;
- 
-    return {
-        status:"cli status on cli component object",
-       // update: () => null,
-       // render: function (){ return null;},
-        React: () => React.createElement(
-                "div", { dangerouslySetInnerHTML: {__html: html} })
-                //"div", null, "cli goes here")
-        };
-}
-
-
 
 // "when and where, not what
 function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
-    const cliForm = document.createElement("form");
-    const input = document.createElement("input");
-    const button = document.createElement("button");
-    const cliHtml=`<form>Cli:input<input/><button>enter</button></form>`
- 
-    input.placeholder = "Enter command here";
-    button.textContent = "Submit";
-    
-    cliForm.id = id;
-    cliForm.addEventListener("submit", handleSubmit);
-    cliForm.append(input, button);
 
+    let cliText = "Initial Cli.cliText";
+
+    function setCliText(text="enter start") {
+        cliText=text;
+    };
+
+/*
     function handleSubmit(evt) {
         evt.preventDefault(); 
         update(input.value);
         //alert(input.value);
         input.value = "";
     }
+*/
 
+    function handleChange(e) {
+        setCliText(e.target.value);
+    }
     // parent is HTMLElement
     // parent.append(cli);
 
@@ -229,7 +195,22 @@ function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
     return {
         update:update,
         render: function (){ return null;},
-        renderReact: function () { 
+        renderReact: function () {
+            return (
+            <form
+                style={{ marginBottom: 0 }}
+                onSubmit={handleSubmit}        
+            >
+                <input 
+                    type="text"
+                    value={this.cliText}
+                    onChange={handleChange}
+                />
+                <button>Submit</button>
+            </form>);
+        },
+ 
+        renderReact2: function () { 
             return React.createElement(
                 "div",
                 null,
@@ -237,13 +218,6 @@ function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
             );
         },
         status:"cli status on cli component object"
-    }
-
-    /*
-    const [cliText, setCliText] = useState("");
-
-    function handleChange(e) {
-        setCliText(e.target.value);
     }
 
     function handleSubmit(e) {
@@ -262,20 +236,6 @@ function Cli(update=cliUpdate, id="cli", parentId="cli-container") {
         setCliText("");
     }
 
-    return (
-        <form
-            style={{ marginBottom: 0 }}
-            onSubmit={handleSubmit}        
-        >
-            <input 
-                type="text"
-                value={cliText}
-                onChange={handleChange}
-            />
-            <button>Submit</button>
-        </form>
-    );
-    */
 }
 
 function Button({ job }) {
