@@ -5,9 +5,15 @@ lta-dashboard-build(){
  docker build -t lta-dashboard -f Dockerfile  .
 }
 
-	  
+lta-dashboard-install(){
+    pip3 install -r requirements.txt 
+}
+
+lta-dashboard-start(){
+    python3 app.py
+}
 # Assumes python entry point
-lta-dashboard-start() {
+lta-dashboard-start-docker() {
   docker run \
   -it \
   --rm \
@@ -18,7 +24,7 @@ lta-dashboard-start() {
   lta-dashboard
 }
 
-lta-dashboard-start-cli() {
+lta-dashboard-start-docker-cli() {
   docker run \
   --entrypoint "/bin/bash" \
   -it \
@@ -30,6 +36,6 @@ lta-dashboard-start-cli() {
   lta-dashboard
 }
 
-lta-dashboard-kill() {
+lta-dashboard-docker-kill() {
   docker container kill lta-dashboard
 }
